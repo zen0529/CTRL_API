@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import asyncio
-
+from models import WhatToDoRequest
 
 load_dotenv()
 
@@ -28,29 +28,44 @@ LLM = ChatOpenAI(
 
 # print(llm_chain.run(question))
 
-async def LLM_Query(energy_level : int, energy_states : list, emotional_states: list, mental_states: list):
+def generate_what_to_do(request: WhatToDoRequest):
+    if len(request.energy_states) > 1:
+      request.energy_states = ", ".join(request.energy_states)
+    
+    
+    # energy_states = ", ".join(energy_states)
+
+
+async def LLM_Query(request: WhatToDoRequest):
     try:
+        joined_energy_states = ", ".join(request.energy_states)
+        print(f"Energy level is: {joined_energy_states}")
+        joined_emotional_states = ", ".join(request.emotional_states)
+        print(f"Emotional level is: {joined_emotional_states}")
+        joined_mental_states = ", ".join(request.mental_states)
+        print(f"Mental level is: {joined_mental_states}")
 
         template = """
-        what shoud I do today if my energy level (ranged from 1 to 10 (Drained: 1, balanced: 5: Peak: 10)) is {energy_level} , my energy states are {energy_states}, my emotional states are {emotional_states}, and my mental states are {mental_states}?
+        what shoud I do today if my energy level (ranged from 1 to 10 (Drained: 1, balanced: 5: Peak: 10)) is {energy_level} , my energy states are {joined_energy_states}, my emotional states are {joined_emotional_states}, and my mental states are {joined_mental_states}?
 
-        Answer in manner in 2 bullet points. Each bullet corresponds to 1 sentence 
+        Answer in 1 sentence only. 
 
-    
         """
-
+        # print(f"Template is: {template}")
         # prompt_template = PromptTemplate(template=template)
         
 
         prompt = PromptTemplate.from_template(template)  
+        print(f"Prompt is: {prompt}")
         formatted_promt = prompt.format(
-            energy_level=energy_level,
-            energy_states=energy_states,
-            emotional_states=emotional_states,
-            mental_states=mental_states
+            energy_level=request.energy_level,
+            energy_states=joined_energy_states,
+            emotional_states=joined_emotional_states,
+            mental_states=joined_mental_states
             )
         # prompt_text = prompt_template.invoke()
         print(f"Prompt is: {prompt}")
+        print(f"Formatted Prompt is: {formatted_promt}")
         response = await LLM.ainvoke(formatted_promt)
         return response.content
 
@@ -63,11 +78,11 @@ async def LLM_Query(energy_level : int, energy_states : list, emotional_states: 
 
 
 
-async def lol():
-  print("okii")
-  dlol = await LLM_Query(5, ["tired", "lethargic"], ["happy", "content"], ["focused", "clear"])
-  print(f"okii this is: {dlol}")
+# async def lol():
+#   print("okii")
+#   dlol = await LLM_Query(5, ["tired", "lethargic"], ["happy", "content"], ["focused", "clear"])
+#   print(f"okii this is: {dlol}")
 
   
-if __name__ == "__main__":
-    asyncio.run(lol())
+# if __name__ == "__main__":
+#     asyncio.run(lol())
