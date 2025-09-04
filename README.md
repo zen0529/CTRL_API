@@ -1,10 +1,19 @@
-#How to setup: 
+# How to setup: 
 
-##create python virtual environment: 
+### 1. Clone the repo
+
+### 2.create python virtual environment: 
 python -m venv CTRL_Venv
 
-##Activate venv: 
+### 3.Activate venv: 
 CTRL_Venv\Scripts\activate
 
-##Install required dependencies: 
+note: Before activating venv, ensure you are in the right directory wheree venv is installed
+
+### 4.Locate the directory of the app
+
+### 5.Install required dependencies: 
 pip install -r requirements.txt
+
+### 6.run the api:
+fastapi dev main.py 
