@@ -1,6 +1,6 @@
 # How to setup: 
 
-### 1. Clone the app
+### 1. Clone the repo
 
 ### 2.create python virtual environment: 
 python -m venv CTRL_Venv
