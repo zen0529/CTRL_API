@@ -1,18 +1,18 @@
 # How to setup: 
 
-## clone the app 
+### 1. Clone the app
 
-## create python virtual environment: 
+### 2.create python virtual environment: 
 python -m venv CTRL_Venv
 
-## Activate venv: 
+### 3.Activate venv: 
 CTRL_Venv\Scripts\activate
 
 note: Before activating venv, ensure you are in the right directory wheree venv is installed
 
-## Locate the directory of the app
+### 4.Locate the directory of the app
 
-## Install required dependencies: 
+### 5.Install required dependencies: 
 pip install -r requirements.txt
 
-## run "fastapi dev main.py" in terminal 
+### 6.run "fastapi dev main.py" in terminal 
