@@ -15,4 +15,5 @@ note: Before activating venv, ensure you are in the right directory wheree venv 
 ### 5.Install required dependencies: 
 pip install -r requirements.txt
 
-### 6.run "fastapi dev main.py" in terminal 
+### 6.run the api:
+fastapi dev main.py 
