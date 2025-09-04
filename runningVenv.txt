@@ -1,0 +1,7 @@
+if home:
+
+
+if office: 
+
+cd: C:\Users\Aldre> 
+run: CTRL_Venv\Scripts\Activate
