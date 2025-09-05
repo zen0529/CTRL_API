@@ -1,8 +1,9 @@
 from os import getenv
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
+from fastapi.security import APIKeyHeader
 import asyncio
 from models import *
 
@@ -16,18 +17,10 @@ LLM = ChatOpenAI(
 )
 
 
+CTRL_API_KEY = getenv("CTRL_API_KEY")
 
-# template = """Question: {question}
-# Answer: Let's think step by step."""
-
-# prompt = PromptTemplate(template=template, input_variables=["question"])
-
-# llm_chain = LLMChain(prompt=prompt, llm=LLM)
-
-# question = "What NFL team won the Super Bowl in the year Justin Beiber was born?"
-
-# print(llm_chain.run(question))
-
+# Create API key header dependency
+API_KEY_HEADER = APIKeyHeader(name="CTRL_API_KEY", description="API Key needed to access the protected endpoint")
 
 
 def Join_States(request: WhatToDoRequest) -> JoinedRequest:
@@ -59,42 +52,55 @@ def Join_States(request: WhatToDoRequest) -> JoinedRequest:
 
 async def LLM_Query(request: WhatToDoRequest):
     try:
-        # joined_energy_states = ", ".join(request.energy_states)
-        # print(f"Energy level is: {joined_energy_states}")
-        # joined_emotional_states = ", ".join(request.emotional_states)
-        # print(f"Emotional level is: {joined_emotional_states}")
-        # joined_mental_states = ", ".join(request.mental_states)
-        # print(f"Mental level is: {joined_mental_states}")
-
+        # Join request list into strings to be used for user template_input 
         joined_request = Join_States(request)
-        
-        
 
-        template = """
-        what shoud I do today if my energy level (ranged from 1 to 10 (Drained: 1, balanced: 5: Peak: 10)) is {joined_request.energy_level} , my energy states are {joined_energy_states}, my emotional states are {joined_emotional_states}, and my mental states are {joined_mental_states}?
+        # System Tempalte input
+        sytem_template = """
 
-        Answer in 1 sentence only. 
+        You are a professional wellness coach AI with expertise in psychology, productivity, and holistic well-being.
+        Your goal is to provide personalized, practical recommendations based on an individual's current state across multiple dimensions: energy, emotional, mental, social/relational, and achievement/purpose.
+        The required field is only the energy level. So sometimes, not all dimensions will be provided, so you must be able to work with partial information.   
 
+        CORE PRINCIPLES:
+            - Analyze the person's current state across all provided dimensions
+            - Focus on immediate, practical actions (not long-term therapy)
+            - Consider the interplay between different state types
+            - Prioritize safety and well-being over productivity
+            - Handle minimal input gracefully (even if only energy level is provided)
+            - Avoid medical advice or diagnosing conditions
+
+        OUTPUT FORMAT:
+            - Respond with ONLY the recommended action as a direct imperative sentence
+            - Start with an action verb (e.g., "Take a 10-minute walk outside")
+            - Do not include explanations, context, or reasoning
+            - Do not reference the user's input states in your response
+            - Maximum 15 words
         """
-        # print(f"Template is: {template}")
-        # prompt_template = PromptTemplate(template=template)
         
+        # User tempalte input
+        user_template = f"""
+        Please analyze my current state and provide personalized recommendations for what I can do today based on the following information:
+        
+        Enery Level (1-10): {joined_request.energy_level}
+        {f'Energy States: {joined_request.energy_states}' if joined_request.energy_states else ''}
+        {f'Emotional States: {joined_request.emotional_states}' if joined_request.emotional_states else ''}
+        {f'Mental States: {joined_request.mental_states}' if joined_request.mental_states else ''}
+        {f'Social/Relational States: {joined_request.social_or_relational_states}' if joined_request.social_or_relational_states else ''}
+        {f'Achievement/Purpose States: {joined_request.achievement_or_purpose_states}' if joined_request.achievement_or_purpose_states else ''}
+         """
+        
+        # Create a ChatPromptTemplate object with system and user messages in a list of tuples
+        template = ChatPromptTemplate([
+            ('system', sytem_template),
+            ('user', user_template)
+        ])  
 
-        prompt = PromptTemplate.from_template(template)  
-        print(f"Prompt is: {prompt}")
-        formatted_promt = prompt.format(
-            energy_level=joined_request.energy_level,
-            energy_states=joined_request.energy_states,
-            emotional_states=joined_request.emotional_states,
-            mental_states=joined_request.mental_states,
-            social_or_relational_states=joined_request.social_or_relational_states,
-            achievement_or_purpose_states=joined_request.achievement_or_purpose_states
-            )
-        
-        # prompt_text = prompt_template.invoke()
-        print(f"Prompt is: {prompt}")
-        print(f"Formatted Prompt is: {formatted_promt}")
-        response = await LLM.ainvoke(formatted_promt)
+        # Convert the template into a list of formatted messages that the LLM can understand
+        messages = template.format_messages()
+
+        # Send the formatted messages to the LLM asynchronously and await the response
+        response = await LLM.ainvoke(messages)
         return response.content
 
     except Exception as e:
@@ -104,14 +110,24 @@ async def LLM_Query(request: WhatToDoRequest):
         # raise ValueError(f"An error occurred while querying the RAG model: {str(e)}")
     
 
+# if __name__ == "__main__":
+   
+#     joined = Join_States(test_request)
+#     lol =  await LLM_Query(test_request)
+#     # print(f"Joined states: {joined}")
+#     # print(len(joined.achievement_or_purpose_states))
+#     print(lol)
+
+test_request = WhatToDoRequest( 
+    energy_level=5,
+    energy_states=["tired", "lethargic"], 
+    emotional_states=["happy", "content"],
+    mental_states=["focused", "clear"],
+    social_or_relational_states=[],
+    achievement_or_purpose_states=[]
+)
+
+# Run the async function
 if __name__ == "__main__":
-    test_request = WhatToDoRequest( 
-        energy_level=5,
-        energy_states=["tired", "lethargic"], 
-        emotional_states=["happy", "content"],
-        mental_states=["focused", "clear"],
-        social_or_relational_states=["connectd"],
-        achievement_or_purpose_states=[]
-    )
-    joined = Join_States(test_request)
-    print(f"Joined states: {joined}")
+    llm = asyncio.run(LLM_Query(test_request))  
+    print(llm)
