@@ -8,7 +8,7 @@ class WhatToDoRequest(BaseModel):
     emotional_states: Optional[list[str]] = None 
     mental_states: Optional[list[str]] = None 
     social_or_relational_states: Optional[list[str]] = None 
-    achievement_or_purpose_states: Optional[list[str]] = None 
+    achievement_or_purpose_states: Optional[list[str]] = None   
 
 class JoinedRequest(BaseModel): 
     energy_level: int

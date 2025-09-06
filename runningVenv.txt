@@ -1,5 +1,6 @@
 if home:
-
+cd:  C:\Users\SEJI>
+run: CTRL_Venv\Scripts\Activate
 
 if office: 
 
