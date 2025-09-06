@@ -15,12 +15,17 @@ def verify_api_key(api_key: str = Depends(API_KEY_HEADER)):
         )
     return api_key
 
+@app.get("/")
+def read_root():
+    return {"status": "FastAPI deployed successfully"}
+
 # Request to generate the action based on the user states
 @app.post("/Recommend_Actions",
            operation_id="recommendActions",   
            summary="Recommend Actions",       
            tags=["Recommendation"]    
           )
+
 async def Recommend_Actions(request: WhatToDoRequest):
     Daily_Action = await LLM_Query(request)
     return Daily_Action
