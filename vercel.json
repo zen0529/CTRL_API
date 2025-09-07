@@ -1,13 +1,15 @@
 {
-  "functions": {
-    "main.py": {
-      "runtime": "now-php@1.0.0"
+  "version": 2,
+  "builds": [
+    {
+      "src": "app/main.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "main.py"
+      "dest": "app/main.py"
     }
   ]
 }
