@@ -1,13 +1,12 @@
 from pydantic import BaseModel
 from typing import Optional
 
-
 class WhatToDoRequest(BaseModel):
     energyLevel: int
     energyStates: Optional[list[str]] = None 
     emotionalStates: Optional[list[str]] = None 
     mentalStates: Optional[list[str]] = None 
-    socialOrRelational_states: Optional[list[str]] = None 
+    socialOrRelationalStates: Optional[list[str]] = None 
     achievementOrPurposeStates: Optional[list[str]] = None   
 
 class JoinedRequest(BaseModel): 

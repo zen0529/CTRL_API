@@ -11,11 +11,11 @@ def Join_States(request: WhatToDoRequest) -> JoinedRequest:
     
     # Create a dictionary to hold the joined states
     states_map = {
-        "energy_states": request.energyStates,
-        "emotional_states": request.emotionalStates,
-        "mental_states": request.mentalStates,
-        "social_or_relational_states": request.socialOrRelational_states,
-        "achievement_or_purpose_states": request.achievementOrPurposeStates,
+        "energyStates": request.energyStates,
+        "emotionalStates": request.emotionalStates,
+        "mentalStates": request.mentalStates,
+        "socialOrRelationalStates": request.socialOrRelationalStates,
+        "achievementOrPurposeStates": request.achievementOrPurposeStates,
     }
     
     # Join the states into comma-separated strings
@@ -26,7 +26,7 @@ def Join_States(request: WhatToDoRequest) -> JoinedRequest:
     
     print(f'joined = {joined}') # for logging purposes
     return JoinedRequest(
-        energy_level=request.energyLevel,
+        energyLevel=request.energyLevel,
         **joined
     ) 
 
@@ -37,21 +37,22 @@ async def LLM_Query(request: WhatToDoRequest):
         This function takes a WhatToDoRequest object and sends it to the LLM model to generate response. 
         If the primary model fails, it falls back to the secondary model. 
     """
-    try:
-         # Join request list into strings to be used for user template_input 
-        joined_request = Join_States(request)
+    # Join request list into strings to be used for user template_input 
+    joined_request = Join_States(request)
         
-        # Create user template
-        user_template = user_template_input(joined_request)
-        
-        # Create a ChatPromptTemplate object with system and user messages in a list of tuples
-        template = ChatPromptTemplate([
-            ('system', system_template),
-            ('user', user_template)
-        ])  
+    # Create user template
+    user_template = user_template_input(joined_request)
+    
+    # Create a ChatPromptTemplate object with system and user messages in a list of tuples
+    template = ChatPromptTemplate([
+        ('system', system_template),
+        ('user', user_template)
+    ])  
 
-        # Convert the template into a list of formatted messages that the LLM can understand
-        messages = template.format_messages()
+    # Convert the template into a list of formatted messages that the LLM can understand
+    messages = template.format_messages()
+    
+    try:
         # Send the formatted messages to the LLM asynchronously and await the response
         response = await PRIMARY_LLM.ainvoke(messages)
         return response.content

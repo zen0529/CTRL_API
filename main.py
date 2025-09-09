@@ -27,6 +27,7 @@ def read_root():
           )
 
 async def Recommend_Actions(request: WhatToDoRequest):
+    print("\nrequest", request)
     Daily_Action = await LLM_Query(request)
     return Daily_Action
 
