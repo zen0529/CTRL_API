@@ -11,9 +11,9 @@ class WhatToDoRequest(BaseModel):
     achievement_or_purpose_states: Optional[list[str]] = None   
 
 class JoinedRequest(BaseModel): 
-    energy_level: int
-    energy_states: Optional[str] = None 
-    emotional_states: Optional[str] = None 
-    mental_states: Optional[str] = None 
-    social_or_relational_states: Optional[str] = None 
-    achievement_or_purpose_states: Optional[str] = None 
+    energyLevel: int
+    energyStates: Optional[str] = None 
+    emotionalStates: Optional[str] = None 
+    mentalStates: Optional[str] = None 
+    socialOrRelationalStates: Optional[str] = None 
+    achievementOrPurposeStates: Optional[str] = None 
