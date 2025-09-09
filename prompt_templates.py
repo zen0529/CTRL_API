@@ -18,12 +18,12 @@ def user_template_input(joined_request):
         user_template = f"""
         Please analyze my current state and provide personalized recommendations for what I can do today based on the following information:
         
-        Enery Level (1-10): {joined_request.energy_level}
-        {f'Energy States: {joined_request.energy_states}' if joined_request.energy_states else ''}
-        {f'Emotional States: {joined_request.emotional_states}' if joined_request.emotional_states else ''}
-        {f'Mental States: {joined_request.mental_states}' if joined_request.mental_states else ''}
-        {f'Social/Relational States: {joined_request.social_or_relational_states}' if joined_request.social_or_relational_states else ''}
-        {f'Achievement/Purpose States: {joined_request.achievement_or_purpose_states}' if joined_request.achievement_or_purpose_states else ''}
+        Enery Level (1-10): {joined_request.energyLevel}
+        {f'Energy States: {joined_request.energyStates}' if joined_request.energyStates else ''}
+        {f'Emotional States: {joined_request.emotionalStates}' if joined_request.emotionalStates else ''}
+        {f'Mental States: {joined_request.mentalStates}' if joined_request.mentalStates else ''}
+        {f'Social/Relational States: {joined_request.socialOrRelationalStates}' if joined_request.socialOrRelationalStates else ''}
+        {f'Achievement/Purpose States: {joined_request.achievementOrPurposeStates}' if joined_request.achievementOrPurposeStates else ''}
          """
          
         return user_template

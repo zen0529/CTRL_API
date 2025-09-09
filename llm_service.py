@@ -11,11 +11,11 @@ def Join_States(request: WhatToDoRequest) -> JoinedRequest:
     
     # Create a dictionary to hold the joined states
     states_map = {
-        "energy_states": request.energy_states,
-        "emotional_states": request.emotional_states,
-        "mental_states": request.mental_states,
-        "social_or_relational_states": request.social_or_relational_states,
-        "achievement_or_purpose_states": request.achievement_or_purpose_states,
+        "energy_states": request.energyStates,
+        "emotional_states": request.emotionalStates,
+        "mental_states": request.mentalStates,
+        "social_or_relational_states": request.socialOrRelational_states,
+        "achievement_or_purpose_states": request.achievementOrPurposeStates,
     }
     
     # Join the states into comma-separated strings
@@ -26,7 +26,7 @@ def Join_States(request: WhatToDoRequest) -> JoinedRequest:
     
     print(f'joined = {joined}') # for logging purposes
     return JoinedRequest(
-        energy_level=request.energy_level,
+        energy_level=request.energyLevel,
         **joined
     ) 
 

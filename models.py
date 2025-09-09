@@ -3,12 +3,12 @@ from typing import Optional
 
 
 class WhatToDoRequest(BaseModel):
-    energy_level: int
-    energy_states: Optional[list[str]] = None 
-    emotional_states: Optional[list[str]] = None 
-    mental_states: Optional[list[str]] = None 
-    social_or_relational_states: Optional[list[str]] = None 
-    achievement_or_purpose_states: Optional[list[str]] = None   
+    energyLevel: int
+    energyStates: Optional[list[str]] = None 
+    emotionalStates: Optional[list[str]] = None 
+    mentalStates: Optional[list[str]] = None 
+    socialOrRelational_states: Optional[list[str]] = None 
+    achievementOrPurposeStates: Optional[list[str]] = None   
 
 class JoinedRequest(BaseModel): 
     energyLevel: int
