@@ -8,6 +8,10 @@ class WhatToDoRequest(BaseModel):
     mentalStates: Optional[list[str]] = None 
     socialOrRelationalStates: Optional[list[str]] = None 
     achievementOrPurposeStates: Optional[list[str]] = None   
+    emotionalIntelligenceQuestion: Optional[str] = None
+    mirrorQuestion: Optional[str] = None
+
+    
 
 class JoinedRequest(BaseModel): 
     energyLevel: int
@@ -16,3 +20,5 @@ class JoinedRequest(BaseModel):
     mentalStates: Optional[str] = None 
     socialOrRelationalStates: Optional[str] = None 
     achievementOrPurposeStates: Optional[str] = None 
+    emotionalIntelligenceQuestion: Optional[str] = None
+    mirrorQuestion: Optional[str] = None

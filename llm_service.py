@@ -27,6 +27,8 @@ def Join_States(request: WhatToDoRequest) -> JoinedRequest:
     print(f'joined = {joined}') # for logging purposes
     return JoinedRequest(
         energyLevel=request.energyLevel,
+        mirrorQuestion=request.mirrorQuestion,
+        emotionalIntelligenceQuestion=request.emotionalIntelligenceQuestion,
         **joined
     ) 
 
