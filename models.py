@@ -1,5 +1,27 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
+
+class MoodAnalysis(BaseModel):
+    overall_mood: str = Field(
+        description="Maximum 15 words. Format: 'Your overall mood today was [classification].' "
+                    "Classifications: Thriving, Positive, Stable, Neutral, Mixed, Challenging, Struggling."
+    )
+    comparison_insight: str = Field(
+        description="Compare to timeframe (7 days, 2 weeks, etc). Max 2 sentences, 50 words. "
+                    "Start with 'Compared to the past [timeframe]...'"
+    )
+    pattern_noticed: str = Field(
+        description="Identify ONE actionable correlation. Max 25 words. "
+                    "Format: '[Trigger/behavior] tends to correlate with [mood outcome]'."
+    )
+    mood_trend: str = Field(
+        description="Describe mood direction over time. Max 30 words. "
+                    "Use words like 'stabilizing', 'declining', 'gradually improving'. Include timeframe."
+    )
+    suggestions: str = Field(
+        description="1-2 concrete actions, max 40 words. Actionable and based on identified patterns."
+    )
+
 
 class WhatToDoRequest(BaseModel):
     energyLevel: int

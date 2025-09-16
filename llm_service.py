@@ -3,6 +3,9 @@ from models import WhatToDoRequest, JoinedRequest
 from fastapi import HTTPException
 from prompt_templates import *
 from setup import *
+from langchain_core.output_parsers import JsonOutputParser
+from models import MoodAnalysis       
+
 
 
 def Join_States(request: WhatToDoRequest) -> JoinedRequest:
@@ -39,32 +42,42 @@ async def LLM_Query(request: WhatToDoRequest):
         This function takes a WhatToDoRequest object and sends it to the LLM model to generate response. 
         If the primary model fails, it falls back to the secondary model. 
     """
-    # Join request list into strings to be used for user template_input 
+    # Join request list into strings to be used for user temeplate_input 
     joined_request = Join_States(request)
         
     # Create user template
     user_template = user_template_input(joined_request)
-    
+
+    # create the parser
+    parser = JsonOutputParser(pydantic_object=MoodAnalysis)
+
+    print(f"parser: {parser}")
     # Create a ChatPromptTemplate object with system and user messages in a list of tuples
     template = ChatPromptTemplate([
-        ('system', system_template),
+        ('system', system_template + "\n\n {format_instructions}"),
         ('user', user_template)
     ])  
 
     # Convert the template into a list of formatted messages that the LLM can understand
-    messages = template.format_messages()
-    
+    messages = template.format_messages(
+        format_instructions=parser.get_format_instructions()
+    )
+
+    print(f"mesages: {messages}")
+
     try:
         # Send the formatted messages to the LLM asynchronously and await the response
         response = await PRIMARY_LLM.ainvoke(messages)
-        return response.content
+        # return response.content
+        return parser.parse(response.content)
 
     except Exception as e:
         print(f"Primary model failed: {e}")
         # Fallback to secondary model
         try:
             response = await FALLBACK_LLM.ainvoke(messages)
-            return response.content
+            # return response.content
+            return parser.parse(response.content)
         except Exception as fallback_e:
             print(f"Messages: {messages}")
             error_msg = f"Both models failed: {fallback_e}"
