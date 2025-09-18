@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from setup import *
-from models import WhatToDoRequest
+from models import GenerateInsightsRequest
 from llm_service import LLM_Query
 
 # initialing the fastAPI app
@@ -20,18 +20,30 @@ def read_root():
     return {"status": "FastAPI deployed successfully"}
 
 # Request to generate the action based on the user states
-@app.post("/Recommend_Actions",
+@app.post("/Generate_Insights",
            operation_id="recommendActions",   
            summary="Recommend Actions",       
            tags=["Recommendation"]    
           )
 
-async def Recommend_Actions(request: WhatToDoRequest):
+async def generate_insights(request: GenerateInsightsRequest, user_timezone: str):
     print("\nrequest", request)
-    Daily_Action = await LLM_Query(request)
+    Daily_Action = await LLM_Query(request, user_timezone)
     return Daily_Action
 
+
+# INSIGHTS_DB.delete_collection()
+
+# stored_docs = INSIGHTS_DB.get()
+# print("printing metadata:")
+# for doc in stored_docs["metadatas"]:
+#     print(doc)
+
+# print("printing docs:")
+# for doc in stored_docs["documents"]:
+#     print(doc)
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    

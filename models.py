@@ -23,7 +23,7 @@ class MoodAnalysis(BaseModel):
     )
 
 
-class WhatToDoRequest(BaseModel):
+class GenerateInsightsRequest(BaseModel):
     energyLevel: int
     energyStates: Optional[list[str]] = None 
     emotionalStates: Optional[list[str]] = None 
@@ -32,10 +32,9 @@ class WhatToDoRequest(BaseModel):
     achievementOrPurposeStates: Optional[list[str]] = None   
     emotionalIntelligenceQuestion: Optional[str] = None
     mirrorQuestion: Optional[str] = None
-
     
 
-class JoinedRequest(BaseModel): 
+class JoinedInsightRequest(BaseModel): 
     energyLevel: int
     energyStates: Optional[str] = None 
     emotionalStates: Optional[str] = None 

@@ -2,26 +2,39 @@ from os import getenv
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from fastapi.security import APIKeyHeader
-from sentence_transformers import SentenceTransformer #type: ignore
 from langchain_chroma import Chroma # type: ignore
+from langchain_huggingface import HuggingFaceEmbeddings #type: ignore
+
+model_name = "sentence-transformers/all-MiniLM-L6-v2"
+model_kwargs = {'device': 'cpu'}
+encode_kwargs = {'normalize_embeddings': False}
+
+SBERT_EMBEDDING = HuggingFaceEmbeddings(
+    model_name=model_name,
+    model_kwargs=model_kwargs,
+    encode_kwargs=encode_kwargs
+)
 
 
 # Load environment variables
 load_dotenv()
 
 # Initialize embedding model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+# embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+
+# embedding_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # Initialize vectordatabase
 CHECKINS_DB = Chroma(
     collection_name="user_checkins_db",
-    embedding_function=embedding_model,
+    embedding_function=SBERT_EMBEDDING,
     persist_directory="./user_db",
 )
 
 INSIGHTS_DB = Chroma(
     collection_name="user_insights_db",
-    embedding_function=embedding_model,
+    embedding_function=SBERT_EMBEDDING,
     persist_directory="./user_db",
 )
 
