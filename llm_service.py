@@ -48,7 +48,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_timezone: str):
         If the primary model fails, it falls back to the secondary model. 
     """
     
-    
+    print(f'user_timezone : {user_timezone}')
     
     
     tz = ZoneInfo(user_timezone)
@@ -114,10 +114,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_timezone: str):
         insights = parser.parse(response.content)
         # insights_json = json.loads(insights)
         
-        insights['comparison_insight'] = f"""
-                        This is your baseline - we'll help you understand patterns as you continue checking in. 
-                        Even this single entry tells us you're someone who values self-awareness.
-                        """
+        insights['comparison_insight'] = f"""This is your baseline - we'll help you understand patterns as you continue checking in. \nEven this single entry tells us you're someone who values self-awareness."""
         
         
         # INSIGHTS_DB.add_texts(
@@ -143,8 +140,6 @@ async def LLM_Query(request: GenerateInsightsRequest, user_timezone: str):
         # Fallback to secondary model
         try:
             response = await FALLBACK_LLM.ainvoke(messages)
-            
-            
             
             insights = parser.parse(response.content)
             
