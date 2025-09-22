@@ -125,10 +125,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         insights = parser.parse(response.content)
         # insights_json = json.loads(insights)
         
-        insights['comparison_insight'] = f"""
-                        This is your baseline - we'll help you understand patterns as you continue checking in. 
-                        Even this single entry tells us you're someone who values self-awareness.
-                        """
+        insights['comparison_insight'] = f"""This is your baseline - we'll help you understand patterns as you continue checking in. \nEven this single entry tells us you're someone who values self-awareness."""
         
         
         # INSIGHTS_DB.add_texts(
@@ -154,8 +151,6 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         # Fallback to secondary model
         try:
             response = await FALLBACK_LLM.ainvoke(messages)
-            
-            
             
             insights = parser.parse(response.content)
             
