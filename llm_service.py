@@ -1,4 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
+from obtain_timezone import getTimeZone
 from models import GenerateInsightsRequest, JoinedInsightRequest
 from fastapi import HTTPException
 from progressive_insights.first_day_insight import NewUserInsightGenerator
@@ -6,10 +7,6 @@ from prompt_templates import *
 from setup import *
 from langchain_core.output_parsers import JsonOutputParser
 from models import MoodAnalysis       
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
-
 
 
 
@@ -37,31 +34,28 @@ def Join_States(request: GenerateInsightsRequest) -> JoinedInsightRequest:
         energyLevel=request.energyLevel,
         mirrorQuestion=request.mirrorQuestion,
         emotionalIntelligenceQuestion=request.emotionalIntelligenceQuestion,
+        
+        # add summarized answers later
+        
+        
         **joined
     ) 
 
 
 
-async def LLM_Query(request: GenerateInsightsRequest, user_timezone: str):
+async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezone: str):
     """ 
-        This function takes a WhatToDoRequest object and sends it to the LLM model to generate response. 
+        This function takes a GenerateInsightsRequest object and sends it to the LLM model to generate response. 
         If the primary model fails, it falls back to the secondary model. 
     """
     
+    # Get current date and time in user's timezone
+    timezone = getTimeZone(user_timezone)
+    date_now = f"{timezone.current_month} {timezone.current_time} {timezone.current_day}"
     
     
     
-    tz = ZoneInfo(user_timezone)
-
-    now = datetime.now(tz)
-
-    current_date = now.date()        # e.g. 2025-09-19
-    current_time = now.time()        # e.g. 23:56:41.123456
-    current_day = now.strftime("%A") #
-    
-    
-    date_now = f"{current_date} {current_time} {current_day}"
-    checkIn_text = """
+    checkIn_text = f"""
     Date: {date_now},
     Energy Level: {request.energyLevel},
     Energy States: {request.energyStates},
@@ -72,17 +66,34 @@ async def LLM_Query(request: GenerateInsightsRequest, user_timezone: str):
     Emotional Intelligence Question: {request.emotionalIntelligenceQuestion},
     Mirror Question: {request.mirrorQuestion}
     """
+    
+    
+    
     # CHECKINS_DB.add_texts(
     #     texts=[checkIn_text],
     #     metadatas=[{
     #         "date": date_now,
     #         "user_id": "12345"
     #         }],   
-    # )
+    # ) 
     
     # Join request list into strings to be used for user temeplate_input 
     joined_request = Join_States(request)
         
+        
+    system_template = ''
+    user_template = ''
+    prompt = prompts()
+    
+    
+    idk = prompt.get_number_of_checkins(user_id)
+    
+    if idk == 0:
+        system_template = prompt.new_user_system_template()
+        user_template =  prompt.new_user_template(joined_request) 
+    # elif idk >= 1
+
+
     # Create user template
     user_template = user_template_input(joined_request)
 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
-class MoodAnalysis(BaseModel):
+class moodInsightOutputParser(BaseModel):
     overall_mood: str = Field(
         description="Maximum 15 words. Format: 'Your overall mood today was [classification].' "
                     "Classifications: Thriving, Positive, Stable, Neutral, Mixed, Challenging, Struggling."
@@ -23,6 +23,18 @@ class MoodAnalysis(BaseModel):
     )
 
 
+class moodInsightOutputParserForNewUsers(BaseModel):
+    suggestions: str = Field(
+        description="1-2 concrete actions, max 40 words. Actionable insights based on the input."
+    )
+
+class EnergyStats(BaseModel):
+    mean: float
+    median: float
+    min: int
+    max: int
+    std_dev: float
+    
 class GenerateInsightsRequest(BaseModel):
     energyLevel: int
     energyStates: Optional[list[str]] = None 
@@ -43,3 +55,13 @@ class JoinedInsightRequest(BaseModel):
     achievementOrPurposeStates: Optional[str] = None 
     emotionalIntelligenceQuestion: Optional[str] = None
     mirrorQuestion: Optional[str] = None
+    summarizedAnswers: Optional[str] = None
+
+
+class timezoneData(BaseModel):
+    current_date: str
+    current_time: str
+    current_day: str
+    current_year: int
+    current_month: int
+    days_in_month: int
