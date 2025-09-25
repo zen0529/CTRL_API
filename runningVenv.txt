@@ -6,3 +6,7 @@ if office:
 
 cd: C:\Users\Aldre> 
 run: CTRL_Venv\Scripts\Activate
+
+
+cluster: CTRL_
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.CqJLKBzjurqR-pvbtLGS_hVCVsM1psgtgjvRMtdQ6fE

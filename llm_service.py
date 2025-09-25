@@ -119,7 +119,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         response = await PRIMARY_LLM.ainvoke(messages)
         
         # Add insights to vectordatabase
-        
+         
         
         # insight_gen = NewUserInsightGenerator()
         insights = parser.parse(response.content)
@@ -129,7 +129,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         
         
         # INSIGHTS_DB.add_texts(
-        #     texts=[response.content],
+        #     texts=[response.content],     
         #     metadatas=[{
         #         "date": date_now,
         #         "user_id": "12345" # Replace with actual user ID
