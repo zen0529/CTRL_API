@@ -4,6 +4,7 @@ from langchain_openai import ChatOpenAI
 from fastapi.security import APIKeyHeader
 from langchain_chroma import Chroma # type: ignore
 from langchain_huggingface import HuggingFaceEmbeddings #type: ignore
+from supabase import create_client, Client # type: ignore
 
 model_name = "sentence-transformers/all-MiniLM-L6-v2"
 model_kwargs = {'device': 'cpu'}
@@ -21,10 +22,12 @@ load_dotenv()
 
 # Initialize embedding model
 # embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-
 # embedding_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
+SUPABASE_URL = getenv("SUPABASE_URL")
+SUPABASE_KEY = getenv("SUPABASE_API_KEY") #SUPABASE_KEY
+# SUPABASE = createClient(supabaseUrl, supabaseKey)
+SUPABASE: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Initialize vectordatabase
 CHECKINS_DB = Chroma(
     collection_name="user_checkins_db",
@@ -42,7 +45,10 @@ INSIGHTS_DB = Chroma(
 PRIMARY_LLM  = ChatOpenAI(
     api_key=getenv("OPENROUTER_API_KEY"),
     base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
-    model="deepseek/deepseek-chat-v3.1:free",
+    # model="deepseek/deepseek-chat-v3.1:free",
+    # model="qwen/qwen3-235b-a22b:free"
+    # model = "arliai/qwq-32b-arliai-rpr-v1:free"
+    model = "z-ai/glm-4.5-air:free"
     # model="google/gemma-3n-e2b-it:free",
     # model="openai/gpt-oss-120b:free"
 )

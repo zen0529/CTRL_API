@@ -1,76 +1,50 @@
+from datetime import datetime
 import random
 from numerical_calculations import calculations
-from fake_data import data
+# from fake_data import data
 from obtain_timezone import getTimeZone
-
-def overall_mood_for_new_users(energy):
-    energyMessages = {
-    1: [
-        f"Your overall mood today feels {energy}.",
-        f"You reported feeling pretty {energy} today.",
-        f"It looks like you're having a {energy.lower()} kind of day.",
-        f"Today seems like a {energy.lower()} day — noticing it is a powerful first step.",
-        f"Feeling {energy.lower()} today is okay — this is your starting point."
-    ]}
-    
-    overall_mood_message = random.choice(energyMessages[1])
-    
-    return overall_mood_message
-
+from checkins_repository import get_monthly_summaries, obtain_previous_checkins_of_the_current_week, obtain_previous_checkins_of_the_previous_week, to_manila_datetime
 
 class prompts: 
         
-        def __init__(self):
-                pass
+        def __init__(self, user_id, timezone):
+                self.user_id = user_id
+                self.timezone = timezone
+        # def summarize_insights(insights):
+                
+        # def get_energy_levels(user_id):
+        #         """" Get all energy levels for all user checkins """
+        #         energy_level_arr = []
+        #         for d in data: #fake data only
+        #                 if d['user_id'] == user_id:
+        #                         # print(d)
+        #                         for e in d['entries']:
+        #                                 energy_level_arr.append(e['energy_level'])
+        #                                 print(energy_level_arr)
+        #                         break
+        #         return energy_level_arr
         
-        def get_energy_levels(user_id):
-                """" Get all energy levels for all user checkins """
-                energy_level_arr = []
-                for d in data: #fake data only
-                        if d['user_id'] == user_id:
-                                # print(d)
-                                for e in d['entries']:
-                                        energy_level_arr.append(e['energy_level'])
-                                        print(energy_level_arr)
-                                break
-                return energy_level_arr
-        
-        def get_number_of_checkins(user_id):
-                """" Get number of checkins for a user """
-                number_of_checkins = 0
-                for d in data: #fake data only
-                        if d['user_id'] == user_id:
-                                # print(d)
-                                for e in d['entries']:
-                                        number_of_checkins += 1
-                                        print(number_of_checkins)
+        # def get_number_of_checkins(user_id):
+        #         """" Get number of checkins for a user """
+        #         number_of_checkins = 0
+        #         for d in data: #fake data only
+        #                 if d['user_id'] == user_id:
+        #                         # print(d)
+        #                         for e in d['entries']:
+        #                                 number_of_checkins += 1
+        #                                 print(number_of_checkins)
                                 
-                return number_of_checkins
+        #         return number_of_checkins
         
-        def get_first_week_user_summary(self, joined_request, user_id):
-                number_of_checkins = 0
-                for d in data: #fake data only  
-                        if d['user_id'] == user_id:
-                                # print(d)
-                                for e in d['entries']:
-                                        number_of_checkins += 1
-                                        print(number_of_checkins)
-                
-        def new_user_template(joined_request):
-                """" User template input for new users """
-                user_tempate_for_new_user = f"""
-                  "Today's mood check in:
-                        - Enery Level (1-10): {joined_request.energyLevel}
-                        {f'- Energy States: {joined_request.energyStates}' if joined_request.energyStates else ''}
-                        {f'- Emotional States: {joined_request.emotionalStates}' if joined_request.emotionalStates else ''}
-                        {f'- Mental States: {joined_request.mentalStates}' if joined_request.mentalStates else ''}
-                        {f'- Social/Relational States: {joined_request.socialOrRelationalStates}' if joined_request.socialOrRelationalStates else ''}
-                        {f'- Achievement/Purpose States: {joined_request.achievementOrPurposeStates}' if joined_request.achievementOrPurposeStates else ''}
-                        {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
-                        {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
-                """     
-                
-                return user_tempate_for_new_user
+        # def get_first_week_user_summary(self, joined_request, user_id):
+        #         number_of_checkins = 0
+        #         for d in data: #fake data only  
+        #                 if d['user_id'] == user_id:
+        #                         # print(d)
+        #                         for e in d['entries']:
+        #                                 number_of_checkins += 1
+        #                                 print(number_of_checkins)
+        
         
         def new_user_system_template():
                 system_template_for_new_users = """
@@ -91,6 +65,52 @@ class prompts:
                         """
 
                 return system_template_for_new_users
+        
+        def new_user_template(joined_request):
+                """" User template input for new users """
+                user_tempate_for_new_user = f"""
+                  "Today's mood check in:
+                        - Enery Level (1-10): {joined_request.energyLevel}
+                        {f'- feelings: {joined_request.feelings}' if joined_request.feelings else ''}
+                        {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
+                        {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
+                """     
+                
+                return user_tempate_for_new_user
+        
+        def new_user_with_checkin_system_template():
+                system_template_for_new_users = """
+                        - Analyze all provided states, considering interplay (e.g., low energy + anxious = restorative focus).
+                        - Prioritize safety and well-being; for conflicting states, address negative ones first.
+                        - Draw from evidence-based practices (CBT, mindfulness, exercise science, positive psychology).
+                        - Provide immediate, practical actions (not long-term therapy or medical advice).
+                        - Ensure recommendations are diverse (e.g., physical, mental, social) and positive.
+
+                        SAFETY GUIDELINES:
+                        - If concerning patterns detected, include gentle resource suggestions
+                        - Never provide medical or clinical diagnoses
+                        - Focus on empowerment and self-awareness, not pathology
+                        - For crisis indicators, prioritize immediate support resources over analysis
+
+                        STRICT OUTPUT RULES:
+                        - Respond ONLY with a valid JSON object
+                        """
+
+                return system_template_for_new_users
+        
+        
+        def new_user_template(joined_request):
+                """" User template input for new users """
+                user_tempate_for_new_user = f"""
+                  "Today's mood check in:
+                        - Enery Level (1-10): {joined_request.energyLevel}
+                        {f'- feelings: {joined_request.feelings}' if joined_request.feelings else ''}
+                        {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
+                        {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
+                """     
+                
+                return user_tempate_for_new_user
+        
         
         def existing_user_prev_data(self, joined_request, user_id: str, number_of_days_in_this_month:int, day:str, user_timezone:str):
                 # obtain energy levels from user data
@@ -138,14 +158,6 @@ class prompts:
                         
                         # libog anhon ang week grrrr
                         
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
                 elif len(number_of_checkins) >= number_of_days_in_this_month:
                         f'- Previous {number_of_days_in_this_month} :'
                         f'- Mean : {calculations_for_user.mean} | Median : {calculations_for_user.median} | Min : {calculations_for_user.min} | Max : {calculations_for_user.max} | Std Dev : {calculations_for_user.std_dev}'
@@ -167,11 +179,36 @@ class prompts:
                 
                 return user_template_for_existing_user_days
         
-        def existing_user_input_(joined_request, day, month, energy_levels):
-                # """ User template input """
-                
+        def existing_user_input_(self, joined_request, day, month, energy_levels):
+                """ User template input """
                 
                 numerical_calculations = calculations(energy_levels)
+                
+                _current_week_checkins =  obtain_previous_checkins_of_the_current_week(self.user_id, self.timezone)
+                _previous_week_checkins =  obtain_previous_checkins_of_the_previous_week(self.user_id, self.timezone)
+                _previous_months_checkins =  get_monthly_summaries(self.user_id)
+                
+                
+                current_week_checkins = f'Last {day}-day check-ins:\n'   
+                previous_week_checkins = 'Previous week check-ins:\n'
+                previous_months_checkins = 'Previous month(s) check-in:\n'
+                
+                                                                                                                       
+                if len(_current_week_checkins) > 0:
+                        for checkin in _current_week_checkins:
+                                created_at_local = to_manila_datetime(checkin['created_at'])
+                                current_week_checkins += (
+                                f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                if len(_previous_week_checkins) > 0:
+                        for checkin in _previous_week_checkins:
+                                created_at_local = to_manila_datetime(checkin['created_at'])
+                                previous_week_checkins += (
+                                f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                if len(_previous_months_checkins) > 0:
+                        for checkin in _previous_months_checkins:
+                                previous_months_checkins += (
+                                f"month: {checkin['month']} | min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | median: {checkin['median']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | overall_mood_summary: {checkin['overall_mood_summary']} | comparison_insight_summary: {checkin['comparison_insight_summary']} | pattern_noticed_summary: {checkin['pattern_noticed_summary']} | mood_trend_summary: {checkin['mood_trend_summary']} | suggestions_summary: {checkin['suggestions_summary']}")
+       
                 
                 # Please analyze my current state and provide personalized recommendations for what I can do today based on the following information:
                 user_template = f"""
@@ -186,19 +223,26 @@ class prompts:
                 {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
                 {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
                 
-                Last {day}-day Summary: 
+                {current_week_checkins if len(previous_week_checkins) > 0 else ''}
                 
-                - Mean : {numerical_calculations.mean} | Median : {numerical_calculations.median} | Min : {numerical_calculations.min} | Max : {numerical_calculations.max} | Std Dev : {numerical_calculations.std_dev}
+                {previous_week_checkins if len(previous_week_checkins) > 0 else ''}
                 
-                
+                {previous_months_checkins if len(previous_months_checkins) > 0 else ''}
+                     
                 """
+                
+                return user_template
+
+        # add if statement if user has previous week checkins
+                # add previous month checkin
+                # if user checked in for a week add it
+                
+                
+                
                 # Check if user has  of data then add a months section in the prompt with monthly breakdown
                 # Check if user has a month only of data then add a month section in the prompt with weekly breakdown
                 # Check if user has months of data then add a months section in the prompt with monthly breakdown
                 
-                return user_template
-
- 
 
 
 

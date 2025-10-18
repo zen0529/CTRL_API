@@ -1,0 +1,262 @@
+from datetime import timedelta, datetime
+# from llm_service import summarize_insight
+from obtain_timezone import getTimeZone
+from setup import SUPABASE
+import calendar
+from numerical_calculations import calculations
+import numpy as np
+import calendar
+from zoneinfo import ZoneInfo
+
+ 
+def lol(user_id, user_timezone):
+    user_type = check_which_user(user_id)
+    
+    if user_type == "new_user":    
+        print("\n\n\nnew user")
+        SUPABASE.table("users").insert({"user_id": user_id,"timezone_user": user_timezone}).execute()  
+ 
+def to_manila_datetime(created_at_str: str) -> datetime:
+    """Convert UTC timestamp string to Asia/Manila datetime."""
+    # Ensure we replace Z with +00:00 for ISO parsing
+    created_at_utc = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+    return created_at_utc.astimezone("Asia/Manila")
+ 
+def check_which_user(user_id: str) -> str:
+    """Check if the user is new, new with check-in, or existing."""
+    response = SUPABASE.table("mood_checkIns").select("*").eq("user_id", user_id).order("created_at", desc=False).limit(10).execute()
+    
+    if (len(response.data) == 0):
+        return "new_user"
+    elif (len(response.data) == 1):
+        return "existing_user_with_missed_checkins"
+    else:
+        return "existing_user"
+
+ #for new user
+def is_new_user(user_id: str) -> bool:
+    """Return True if the user is new (1 previous check-ins)."""
+    response = SUPABASE.table("mood_checkIns").select("*").eq("user_id", user_id).order("created_at", desc=False).limit(10).execute()
+    
+    if (len(response.data) > 0):
+        return False
+    
+    return True  
+
+def is_new_user_with_checkin(user_id: str) -> bool:
+    """Return True if the user is new (1 previous check-ins)."""
+    response = SUPABASE.table("mood_checkIns").select("*").eq("user_id", user_id).order("created_at", desc=False).limit(10).execute()
+    
+    if (len(response.data) > 1):
+        return False
+    
+    return True  
+
+
+def get_days_since_last_checkin(user_id: str, timezone: str) -> int:
+    """
+    Calculate the number of days between the user's most recent check-in 
+    and the current date in the specified timezone.
+
+    Args:
+        user_id (str): The ID of the user whose check-in history to query.
+        timezone (str): The IANA timezone string (e.g., "Asia/Manila").
+
+    Returns:
+        int: The number of full days since the last check-in.
+             Returns 0 if the last check-in was today.
+    """
+    response = (
+        SUPABASE.table("mood_checkIns")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    # timezone = "Asia/Manila"  # ⚠️ Consider removing hardcoding if you really want to use the function arg
+    _get_Timezone = getTimeZone(timezone)
+
+    last_checkin_date = response.data[0]
+    created_at_str = last_checkin_date['created_at']
+
+    created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+    created_at_date = created_at.date()
+    current_date = _get_Timezone.current_date()
+
+    diff_days = (current_date - created_at_date).days
+    return diff_days
+        
+        
+        
+
+
+def has_previous_checkins(user_id: str) -> bool:
+    """Return True if the user has at least one previous check-in."""
+    response = SUPABASE.table("mood_checkIns").select("*").eq("user_id", user_id).execute()
+    has_previous_checkins = len(response.data) > 0
+    return has_previous_checkins 
+
+def query(user_id: str):
+    response = (
+        SUPABASE.table("")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    
+    return response.data
+    
+    
+
+def obtain_previous_checkins_of_the_current_week(user_id: str, user_timezone: str):
+    """Return the previous check-ins of the current week for the user."""
+    _user_timezone = getTimeZone(user_timezone) 
+    current_date = _user_timezone.current_date  
+    
+    print("current date: ", current_date)
+    
+    start_of_week = current_date - timedelta(days=current_date.weekday())
+    end_of_week = start_of_week + timedelta(days=6)      
+    
+    # Use proper datetime boundaries 
+    start_datetime = f"{start_of_week.isoformat()}T00:00:00+00" 
+    end_datetime = f"{end_of_week.isoformat()}T23:59:59+00"
+    
+    response = (
+        SUPABASE.table("mood_checkIns")
+        .select("*")
+        .eq("user_id", user_id)
+        .gte("created_at", start_datetime)
+        .lte("created_at", end_datetime)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    
+    return response.data
+
+def obtain_previous_checkins_of_the_previous_week(user_id: str, user_timezone: str):
+    """Return the previous check-ins of the previous for the user."""
+    _user_timezone = getTimeZone(user_timezone) 
+    current_date = _user_timezone.current_date
+    
+    # obtain current monday of the week
+    current_week_monday = current_date - timedelta(days=current_date.weekday())
+    
+    start_of_week = current_week_monday - timedelta(days=7)
+    end_of_week = start_of_week + timedelta(days=6)     
+    
+    # Use proper datetime boundarie
+    start_datetime = f"{start_of_week.isoformat()}T00:00:00+00" 
+    end_datetime = f"{end_of_week.isoformat()}T23:59:59+00"    
+    
+    response = (
+        SUPABASE.table("mood_checkIns")
+        .select("*")
+        .eq("user_id", user_id)
+        .gte("created_at", start_datetime)
+        .lte("created_at", end_datetime)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    
+    return response.data
+
+
+def obtain_previous_checkins_of_previous_months(user_id: str, user_timezone: str):
+    """Return check-ins for the current month, organized by weeks (Monday-Sunday)."""
+    
+    _user_timezone = getTimeZone(user_timezone)
+    current_date = _user_timezone.current_date
+    
+    # check current month -> check current date -> if current date >= 10 days of the month obtain only this month -> else obtain last month
+    # Get all check-ins for the entire month
+    start_of_month = current_date.replace(day=1)
+    last_day = calendar.monthrange(current_date.year, current_date.month)[1]
+    end_of_month = current_date.replace(day=last_day)
+     
+    # Query all month's data
+    start_datetime = f"{start_of_month.isoformat()}T00:00:00+00"
+    end_datetime = f"{end_of_month.isoformat()}T23:59:59+00"
+    
+    response = (
+        SUPABASE.table("mood_checkIns")
+        .select("*")
+        .eq("user_id", user_id)
+        .gte("created_at", start_datetime)
+        .lte("created_at", end_datetime)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    
+    weekly_checkins = {}
+    checkins = {}    
+    # checkins["week_1"] = response.data
+    
+    number_of_checkins = len(response.data)
+    # return checkins 
+    # return {"start" : start_datetime, 
+    #         "end": end_datetime}
+    
+    if number_of_checkins >= 10:
+        # checkins = checkins.append(number_of_checkins)
+        pass
+    else:
+        # Get first day of previous month
+        first_of_current = current_date.replace(day=1)
+        start_of_month = (first_of_current - timedelta(days=1)).replace(day=1)
+
+        # Get last day of previous month  
+        end_of_month = first_of_current - timedelta(days=1)
+
+        # Query all month's data
+        start_datetime = f"{start_of_month.isoformat()}T00:00:00+00"
+        end_datetime = f"{end_of_month.isoformat()}T23:59:59+00"
+                
+        response = (
+            SUPABASE.table("mood_checkIns")
+            .select("*")
+            .eq("user_id", user_id)
+            .gte("created_at", start_datetime)
+            .lte("created_at", end_datetime)
+            .order("created_at", desc=False)
+            .execute()
+        )
+        
+        checkins = checkins.append(response.data)
+        print(checkins)
+    return response.data
+
+
+    
+    
+def get_monthly_summaries(user_id: str):
+    """Fetch all monthly summaries for the given user."""
+    try:
+        response = (
+            SUPABASE.table("monthly_summaries")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("year", desc=True)
+            .order("month", desc=True)
+            .execute()
+        )
+
+        summaries = response.data
+
+        if not summaries or len(summaries) == 0:
+            print(f"No monthly summaries found for user {user_id}.")
+            return []
+
+        print(f"✅ Retrieved {len(summaries)} monthly summaries for user {user_id}.")
+        return summaries
+
+    except Exception as e:
+        print(f"❌ Error fetching monthly summaries: {e}")
+
+        return []
+
+
+

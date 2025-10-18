@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-
+from datetime import date, time
 class moodInsightOutputParser(BaseModel):
     overall_mood: str = Field(
         description="Maximum 15 words. Format: 'Your overall mood today was [classification].' "
@@ -19,14 +19,19 @@ class moodInsightOutputParser(BaseModel):
                     "Use words like 'stabilizing', 'declining', 'gradually improving'. Include timeframe."
     )
     suggestions: str = Field(
-        description="1-2 concrete actions, max 40 words. Actionable and based on identified patterns."
+        description="1-2 concrete actions, max 40 words. Actionable suggestions based on the input."
     )
 
 
-class moodInsightOutputParserForNewUsers(BaseModel):
-    suggestions: str = Field(
-        description="1-2 concrete actions, max 40 words. Actionable insights based on the input."
-    )
+# class suggestionOutputParser(BaseModel):
+#     suggestions: str = Field(
+#         description="1-2 concrete actions, max 40 words. Actionable and based on the input."
+#     )
+
+# class moodInsightOutputParserForNewUsers(BaseModel):
+#     suggestions: str = Field(
+#         description="1-2 concrete actions, max 40 words. Actionable insights based on the input."
+#     )
 
 class EnergyStats(BaseModel):
     mean: float
@@ -34,33 +39,26 @@ class EnergyStats(BaseModel):
     min: int
     max: int
     std_dev: float
+    trend_slope: float
     
 class GenerateInsightsRequest(BaseModel):
     energyLevel: int
-    energyStates: Optional[list[str]] = None 
-    emotionalStates: Optional[list[str]] = None 
-    mentalStates: Optional[list[str]] = None 
-    socialOrRelationalStates: Optional[list[str]] = None 
-    achievementOrPurposeStates: Optional[list[str]] = None   
+    feelings: Optional[list[str]] = None 
     emotionalIntelligenceQuestion: Optional[str] = None
     mirrorQuestion: Optional[str] = None
     
 
 class JoinedInsightRequest(BaseModel): 
     energyLevel: int
-    energyStates: Optional[str] = None 
-    emotionalStates: Optional[str] = None 
-    mentalStates: Optional[str] = None 
-    socialOrRelationalStates: Optional[str] = None 
-    achievementOrPurposeStates: Optional[str] = None 
+    feelings: Optional[str] = None 
     emotionalIntelligenceQuestion: Optional[str] = None
     mirrorQuestion: Optional[str] = None
     summarizedAnswers: Optional[str] = None
 
 
 class timezoneData(BaseModel):
-    current_date: str
-    current_time: str
+    current_date: date
+    current_time: time
     current_day: str
     current_year: int
     current_month: int
