@@ -31,7 +31,7 @@ def Join_States(request: GenerateInsightsRequest) -> JoinedInsightRequest:
     
     print(f'joined = {joined}') # for logging purposes
     return JoinedInsightRequest(
-        energyLevel=request.energyLevel,
+        energy_value=request.energy_value,
         mirrorQuestion=request.mirrorQuestion,
         emotionalIntelligenceQuestion=request.emotionalIntelligenceQuestion,
         
@@ -58,8 +58,9 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
     user_template = ''
     
     # Determine user type
-    user_type = check_which_user(user_id)
+    user_type = check_which_user(user_id)   
     
+    print(f"user type: {user_type}")
     # if user_type == "new_user":    
     #     print("\n\n\nnew user")
     #     SUPABASE.table("users").insert({"timezone_user": user_timezone}).execute()  
@@ -68,23 +69,28 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
     # response = await PRIMARY_LLM.ainvoke("generate")
     # Create a prompt based on the user type 
     # instantiate the prompt class
-    prompt = prompts() 
-    
     joined_request = Join_States(request)
+    
+    prompt = prompts(joined_request=joined_request, user_id=user_id, timezone=timezone) 
+    
     parser = JsonOutputParser(pydantic_object=moodInsightOutputParser)
     
     if user_type == "existing_user":
         # system_template = prompt.existing_user_system_template()
         # user_template =  prompt.existing_user_template(Join_States(request))
-        system_template = prompt.existing_user_prev_data(joined_request, user_id, timezone.days_in_month, timezone.current_day, user_timezone)
+        print("\n\nuser is existing")
+        system_template = prompt.existing_system_template()
         user_template =  prompt.existing_user_input_(joined_request, timezone.current_day, timezone.current_month, timezone.days_in_month)
-        pass
-    else:
+    else:   
+        print("\n\nuser is new")
         system_template = prompt.new_user_system_template()
-        user_template =  prompt.new_user_template(joined_request)
-        
+        user_template =  prompt.new_user_template()
+    
+    # print("system template", system_template)
+    # print("user template",user_template)
+    
     # create the parser for output formatting
-    print(f"parser: {parser}")
+    # print(f"parser: {parser}")
     # Create a ChatPromptTemplate object with system and user messages in a list of tuples
     template = ChatPromptTemplate([
         ('system', system_template + "\n\n {format_instructions}"),
@@ -96,41 +102,52 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         format_instructions=parser.get_format_instructions()
     )
 
-    print(f"mesages: {messages}")
+    # print(f"mesages: {messages}")
 
     try:
         # Send the formatted messages to the LLM asynchronously and await the response
         response = await PRIMARY_LLM.ainvoke(messages)
         
+        print("\n\nresponse content", response.content)
+        print("\n\nresponse content type", type(response.content))
+        
         # generated insights 
         insights = parser.parse(response.content)
         
+        
+        print("insights: ", type(insights))
+
+        print("insights overall mood: ", insights['overall_mood'])
+        
+        print("energy value:", request.energy_value)
+        # print(insights['overall_mood'])
         if user_type == "new_user":
-            insights['overall_mood'] = overall_mood(request.energyLevel)
+            insights['overall_mood'] = overall_mood(request.energy_value)
             insights['comparison_insight'] = f"""This is your baseline - we'll help you understand patterns as you continue checking in. \nEven this single entry tells us you're someone who values self-awareness."""
             insights['pattern_noticed'] = random.choice(pattern_messages_for_new_users) 
             insights['mood_trend'] = random.choice(mood_trend_messages_for_new_users)
             print("New User insights: ", insights)
-        elif user_type == "existing_user_with_missed_checkins":
+        else:
             # obtain gap messages depending on days missed
+            
+            # continue this part
             gap_days = get_days_since_last_checkin(user_id, user_timezone)
             gap_message = gap_messages(gap_days)
             
-            insights['overall_mood'] = overall_mood(request.energyLevel)
-            insights['comparison_insight'] = gap_message
             
+            if gap_days >= 4:
+                insights['overall_mood'] = overall_mood(request.energy_value)
+                insights['comparison_insight'] = gap_message
+                    # if gap_days >= 3:
+                insights['pattern_noticed'] = random.choice(pattern_gap_messages).format(days=gap_days)
+                insights['mood_trend'] = random.choice(mood_trend_gap_messages).format(days=gap_days) #why only mood trend, pattern noticed...? because LLM will generate the suggestion
+                return insights
+            else:
+                return insights
             # checks if user has missed more than 3 days then add pattern/mood trend messages to encourage checking in
-            if gap_days >= 3:
-                    insights['pattern_noticed'] = random.choice(pattern_gap_messages).format(days=gap_days)
-                    insights['mood_trend'] = random.choice(mood_trend_gap_messages).format(days=gap_days) #why only mood trend, pattern noticed...? because LLM will generate the suggestion
-            # else generate insights
-        # for existing user
-        else:
-            # to be continued
-            pass
             
-     
-     
+        
+        print("insights: ", insights)
         # add  to prompt: watch also for missing checkin days cause that will also give insights
         
         # print(f"insights: {insights}")
@@ -195,7 +212,7 @@ async def summarize_insight_daily(input_text: str):
 
     # Call the model
     try:
-        response = await PRIMARY_LLM.ainvoke(prompt)
+        response = await SUMMARIZATION_LLM.ainvoke(prompt)
         return response.content
     
     except Exception as e:
@@ -229,7 +246,7 @@ async def summarize_insight_monthly(input_text: str):
 
     # Call the model
     try:
-        response = await PRIMARY_LLM.ainvoke(prompt)
+        response = await SUMMARIZATION_LLM.ainvoke(prompt)
         return response.content
     
     except Exception as e:

@@ -29,7 +29,7 @@ async def summarize_previous_day_checkins(user_id: str, user_timezone: str):
     # Query all yesterday's data
     start_datetime = f"{previous_day.isoformat()}T00:00:00+00"
     end_datetime = f"{previous_day.isoformat()}T23:59:59+00"
-
+    
     # Fetch all check-ins for the previous day
     response = (
         SUPABASE.table("mood_checkIns")
@@ -39,14 +39,13 @@ async def summarize_previous_day_checkins(user_id: str, user_timezone: str):
         .lte("created_at", end_datetime)
         .execute()
     )
-
+     
     checkins = response.data
     
     print(checkins)
     if not checkins:
         print(f"No check-ins found for {previous_day}")
         return
-
     # Extract energy values
     energy_values = [
         item.get("energy_value")
@@ -77,7 +76,7 @@ async def summarize_previous_day_checkins(user_id: str, user_timezone: str):
             "feelings": checkins[0].get("feelings"),
             "energy_value": checkins[0].get("energy_value"),
             "texts_summary": summarized_text,
-            "no_of_checkins": 1
+            "no_of_checkins": 1,
         }
         
         

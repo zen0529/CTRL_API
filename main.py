@@ -1,5 +1,7 @@
 import json
 from fastapi import FastAPI, Depends, HTTPException, status
+from checkins_repository import get_days_since_last_checkin, get_monthly_summaries, obtain_previous_checkins_of_the_current_week, obtain_previous_checkins_of_the_previous_week
+from llm_service import LLM_Query
 from setup import *
 from models import GenerateInsightsRequest
 # from llm_service import LLM_Query
@@ -30,7 +32,7 @@ def read_root():
           )
 async def generate_insights(request: GenerateInsightsRequest, user_timezone: str, user_id:str):
     # print("\nrequest", request)
-    # Daily_Action = await LLM_Query(request, user_timezone)
+    # Daily_Action = await LLM_Query(request, user_id ,user_timezone)
     # return Daily_Action
 
     # with open("mockdata.json", "r") as f:
@@ -53,26 +55,28 @@ async def generate_insights(request: GenerateInsightsRequest, user_timezone: str
     # lol1 = get_all_users
     # lol1 = daily_summary_job()
     # lol1 = summarize_previous_day_checkins(user_id, user_timezone)
-    h = f"""
-    Avoided emotion: I’m avoiding disappointment. I’ve failed so many times that I’d rather not try than face that feeling again. It keeps me from taking chances that could actually change things.
-    Mirror answer: I’d tell them failure doesn’t define them — it just means they’re trying. Courage isn’t about avoiding disappointment; it’s about showing up despite it.
+    # h = f"""
+    # Avoided emotion: I’m avoiding disappointment. I’ve failed so many times that I’d rather not try than face that feeling again. It keeps me from taking chances that could actually change things.
+    # Mirror answer: I’d tell them failure doesn’t define them — it just means they’re trying. Courage isn’t about avoiding disappointment; it’s about showing up despite it.
     
-    Avoided emotion: I’m pushing away anger because it makes me feel out of control. But bottling it up just turns into exhaustion and fake calmness that drains my creativity.
-    Mirror question answer: I’d remind them anger is just information. If you listen instead of suppress it, you can learn what boundary was crossed and fix it with clarity instead of rage.
+    # Avoided emotion: I’m pushing away anger because it makes me feel out of control. But bottling it up just turns into exhaustion and fake calmness that drains my creativity.
+    # Mirror question answer: I’d remind them anger is just information. If you listen instead of suppress it, you can learn what boundary was crossed and fix it with clarity instead of rage.
     
-    Avoided emotion: ’m avoiding sadness over a friendship that ended badly. Pretending it doesn’t bother me makes me feel strong, but it also stops me from forming new connections.
-    Mirror question answer: I’d say healing means admitting it hurt. Letting yourself grieve doesn’t make you weak — it frees you to actually move forward and connect again.
+    # Avoided emotion: ’m avoiding sadness over a friendship that ended badly. Pretending it doesn’t bother me makes me feel strong, but it also stops me from forming new connections.
+    # Mirror question answer: I’d say healing means admitting it hurt. Letting yourself grieve doesn’t make you weak — it frees you to actually move forward and connect again.
     
-    Avoided emotion: I’m ignoring my anxiety about the future. I distract myself with work, but deep down it’s stopping me from planning long-term or taking real ownership of what I want.
-    Mirror question answer:I’d tell them fear of uncertainty is normal. Plan small steps, not perfect ones. Clarity only shows up once you’re already walking.
+    # Avoided emotion: I’m ignoring my anxiety about the future. I distract myself with work, but deep down it’s stopping me from planning long-term or taking real ownership of what I want.
+    # Mirror question answer:I’d tell them fear of uncertainty is normal. Plan small steps, not perfect ones. Clarity only shows up once you’re already walking.
     
-    Avoided emotion: I’m avoiding guilt for letting people down. Instead of apologizing or improving, I keep overcompensating and burning out trying to “make up” for everything silently.
-    Mirror question answer: I’d tell them guilt can become fuel for growth. You can’t undo the past, but you can start living in a way that honors what you’ve learned.
-    
-    """
+    # Avoided emotion: I’m avoiding guilt for letting people down. Instead of apologizing or improving, I keep overcompensating and burning out trying to “make up” for everything silently.
+    # Mirror question answer: I’d tell them guilt can become fuel for growth. You can’t undo the past, but you can start living in a way that honors what you’ve learned.
+
+    # """
     # lol1 = await summarize_previous_day_checkins(user_id, user_timezone)
     
-    lol1 = await summarize_monthly_checkins(user_id, user_timezone)
+    # lol1 = await summarize_monthly_checkins(user_id, user_timezone)
+    # lol1 = get_monthly_summaries(user_id)
+    lol1 = get_days_since_last_checkin(user_id, user_timezone)
     return lol1
 
 

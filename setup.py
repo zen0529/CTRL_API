@@ -41,14 +41,26 @@ INSIGHTS_DB = Chroma(
     persist_directory="./user_db",
 )
 
-# Initialize Primary LLM
-PRIMARY_LLM  = ChatOpenAI(
+SUMMARIZATION_LLM = ChatOpenAI(
     api_key=getenv("OPENROUTER_API_KEY"),
     base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
     # model="deepseek/deepseek-chat-v3.1:free",
     # model="qwen/qwen3-235b-a22b:free"
     # model = "arliai/qwq-32b-arliai-rpr-v1:free"
     model = "z-ai/glm-4.5-air:free"
+    # model="google/gemma-3n-e2b-it:free",
+    # model="openai/gpt-oss-120b:free"
+)
+
+# Initialize Primary LLM
+PRIMARY_LLM  = ChatOpenAI(
+    api_key=getenv("OPENROUTER_API_KEY"),
+    base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
+    # model="deepseek/deepseek-chat-v3.1:free",
+    model = "qwen/qwen3-30b-a3b:free"
+    # model="qwen/qwen3-235b-a22b:free"
+    # model = "arliai/qwq-32b-arliai-rpr-v1:free"
+    # model = "z-ai/glm-4.5-air:free"
     # model="google/gemma-3n-e2b-it:free",
     # model="openai/gpt-oss-120b:free"
 )

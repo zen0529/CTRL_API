@@ -28,8 +28,8 @@ def check_which_user(user_id: str) -> str:
     
     if (len(response.data) == 0):
         return "new_user"
-    elif (len(response.data) == 1):
-        return "existing_user_with_missed_checkins"
+    # elif (len(response.data) == 1):
+    #     return "existing_user_with_missed_checkins"
     else:
         return "existing_user"
 
@@ -83,7 +83,7 @@ def get_days_since_last_checkin(user_id: str, timezone: str) -> int:
 
     created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
     created_at_date = created_at.date()
-    current_date = _get_Timezone.current_date()
+    current_date = _get_Timezone.current_date
 
     diff_days = (current_date - created_at_date).days
     return diff_days
@@ -125,22 +125,44 @@ def obtain_previous_checkins_of_the_current_week(user_id: str, user_timezone: st
     start_datetime = f"{start_of_week.isoformat()}T00:00:00+00" 
     end_datetime = f"{end_of_week.isoformat()}T23:59:59+00"
     
-    response = (
-        SUPABASE.table("mood_checkIns")
-        .select("*")
-        .eq("user_id", user_id)
-        .gte("created_at", start_datetime)
-        .lte("created_at", end_datetime)
-        .order("created_at", desc=False)
-        .execute()
-    )
+    print("start datetime: ", start_datetime)
+    print("end datetime: ", end_datetime)
     
-    return response.data
+    # response = (
+    #     SUPABASE.table("mood_checkIns")
+    #     .select("*")
+    #     .eq("user_id", user_id)
+    #     .gte("created_at", start_datetime)
+    #     .lte("created_at", end_datetime)
+    #     .order("created_at", desc=False)
+    #     .execute()
+    # )
+    try:
+        print("obtaining current week's check-ins")
+        response = (
+            SUPABASE.table("daily_summaries")
+            .select("*")
+            .eq("user_id", user_id)
+            .gte("checkin_day", start_of_week.isoformat())
+            .lte("checkin_day", end_of_week.isoformat())
+            .order("checkin_day", desc=False)
+            .execute()
+        )
+        if not response.data:
+            return "No check-ins found for the current week."
+        return response.data
+        
+    except Exception as e:
+      print(f"❌ Error fetching current week's check-ins: {e}")
+      return f"❌ Error fetching current week's check-ins: {e}"
+    
 
 def obtain_previous_checkins_of_the_previous_week(user_id: str, user_timezone: str):
     """Return the previous check-ins of the previous for the user."""
     _user_timezone = getTimeZone(user_timezone) 
     current_date = _user_timezone.current_date
+    
+    
     
     # obtain current monday of the week
     current_week_monday = current_date - timedelta(days=current_date.weekday())
@@ -152,17 +174,62 @@ def obtain_previous_checkins_of_the_previous_week(user_id: str, user_timezone: s
     start_datetime = f"{start_of_week.isoformat()}T00:00:00+00" 
     end_datetime = f"{end_of_week.isoformat()}T23:59:59+00"    
     
-    response = (
-        SUPABASE.table("mood_checkIns")
-        .select("*")
-        .eq("user_id", user_id)
-        .gte("created_at", start_datetime)
-        .lte("created_at", end_datetime)
-        .order("created_at", desc=False)
-        .execute()
-    )
+    try:
+        print("obtianing previous week summaries")
+        response = (
+            SUPABASE.table("daily_summaries")
+            .select("*")
+            .eq("user_id", user_id)
+            .gte("checkin_day", start_of_week.isoformat())
+            .lte("checkin_day", end_of_week.isoformat())
+            .order("checkin_day", desc=False)
+            .execute()
+        )
+        if not response.data:
+            print(f"No previous week's check-ins found for user {user_id}.")
+            
+        return response.data
+    except Exception as e:
+        print(f"❌ Error fetching previous week's check-ins: {e}")
+        return f"❌ Error fetching previous week's check-ins: {e}"
     
-    return response.data
+   
+
+
+
+    
+def get_monthly_summaries(user_id: str):
+    """Fetch all monthly summaries for the given user."""
+    try:
+        print("obtianing monthly summaries")
+        response = (
+            SUPABASE.table("monthly_summaries")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("year", desc=True)
+            .order("month", desc=True)
+            .execute()
+        )
+
+        summaries = response.data
+        
+        if not summaries:
+            print(f"No monthly summaries found for user {user_id}.")
+
+        return summaries
+        # if not summaries or len(summaries) == 0:
+        #     print(f"No monthly summaries found for user {user_id}.")
+        #     return []
+
+        # print(f"✅ Retrieved {len(summaries)} monthly summaries for user {user_id}.")
+        # return summaries
+
+    except Exception as e:
+        print(f"❌ Error fetching monthly summaries: {e}")
+
+        return f"❌ Error fetching monthly summaries: {e}"
+
+
 
 
 def obtain_previous_checkins_of_previous_months(user_id: str, user_timezone: str):
@@ -228,35 +295,3 @@ def obtain_previous_checkins_of_previous_months(user_id: str, user_timezone: str
         checkins = checkins.append(response.data)
         print(checkins)
     return response.data
-
-
-    
-    
-def get_monthly_summaries(user_id: str):
-    """Fetch all monthly summaries for the given user."""
-    try:
-        response = (
-            SUPABASE.table("monthly_summaries")
-            .select("*")
-            .eq("user_id", user_id)
-            .order("year", desc=True)
-            .order("month", desc=True)
-            .execute()
-        )
-
-        summaries = response.data
-
-        if not summaries or len(summaries) == 0:
-            print(f"No monthly summaries found for user {user_id}.")
-            return []
-
-        print(f"✅ Retrieved {len(summaries)} monthly summaries for user {user_id}.")
-        return summaries
-
-    except Exception as e:
-        print(f"❌ Error fetching monthly summaries: {e}")
-
-        return []
-
-
-

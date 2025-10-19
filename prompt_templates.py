@@ -7,7 +7,8 @@ from checkins_repository import get_monthly_summaries, obtain_previous_checkins_
 
 class prompts: 
         
-        def __init__(self, user_id, timezone):
+        def __init__(self, user_id, timezone, joined_request):
+                self.joined_request = joined_request
                 self.user_id = user_id
                 self.timezone = timezone
         # def summarize_insights(insights):
@@ -46,7 +47,7 @@ class prompts:
         #                                 print(number_of_checkins)
         
         
-        def new_user_system_template():
+        def new_user_system_template(self):
                 system_template_for_new_users = """
                         - Analyze all provided states, considering interplay (e.g., low energy + anxious = restorative focus).
                         - Prioritize safety and well-being; for conflicting states, address negative ones first.
@@ -66,14 +67,14 @@ class prompts:
 
                 return system_template_for_new_users
         
-        def new_user_template(joined_request):
+        def new_user_template(self):
                 """" User template input for new users """
                 user_tempate_for_new_user = f"""
                   "Today's mood check in:
-                        - Enery Level (1-10): {joined_request.energyLevel}
-                        {f'- feelings: {joined_request.feelings}' if joined_request.feelings else ''}
-                        {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
-                        {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
+                        - Enery Level (1-10): {self.joined_request.energy_value}
+                        {f'- feelings: {self.joined_request.feelings}' if self.joined_request.feelings else ''}
+                        {f'- Emotional Intelligence Question: {self.joined_request.emotionalIntelligenceQuestion}' if self.joined_request.emotionalIntelligenceQuestion else ''}
+                        {f'- Mirror Question: {self.joined_request.mirrorQuestion}' if self.joined_request.mirrorQuestion else ''}
                 """     
                 
                 return user_tempate_for_new_user
@@ -99,17 +100,18 @@ class prompts:
                 return system_template_for_new_users
         
         
-        def new_user_template(joined_request):
-                """" User template input for new users """
-                user_tempate_for_new_user = f"""
-                  "Today's mood check in:
-                        - Enery Level (1-10): {joined_request.energyLevel}
-                        {f'- feelings: {joined_request.feelings}' if joined_request.feelings else ''}
-                        {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
-                        {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
-                """     
-                
-                return user_tempate_for_new_user
+        def new_user_template(self):
+                """User template input for new users."""
+                jr = self.joined_request
+                user_template_for_new_user = f"""
+                Today's mood check-in:
+                        - Energy Level (1-10): {getattr(jr, 'energy_value', 'N/A')}
+                        {f'- Feelings: {jr.feelings}' if getattr(jr, 'feelings', None) else ''}
+                        {f'- Emotional Intelligence Question: {jr.emotionalIntelligenceQuestion}' if getattr(jr, 'emotionalIntelligenceQuestion', None) else ''}
+                        {f'- Mirror Question: {jr.mirrorQuestion}' if getattr(jr, 'mirrorQuestion', None) else ''}
+                """
+                return user_template_for_new_user.strip()
+
         
         
         def existing_user_prev_data(self, joined_request, user_id: str, number_of_days_in_this_month:int, day:str, user_timezone:str):
@@ -196,19 +198,36 @@ class prompts:
                                                                                                                        
                 if len(_current_week_checkins) > 0:
                         for checkin in _current_week_checkins:
-                                created_at_local = to_manila_datetime(checkin['created_at'])
-                                current_week_checkins += (
-                                f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                                # created_at_local = to_manila_datetime(checkin['created_at'])
+                                # current_week_checkins += (
+                                # f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                                if checkin['energy_value'] is None:
+                                        current_week_checkins += (
+                                        f" min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | summarized_text: {checkin['texts_summary']}\n\n")
+                                else:
+                                        current_week_checkins += (
+                                        f" energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_text: {checkin['texts_summary']}\n")
                 if len(_previous_week_checkins) > 0:
                         for checkin in _previous_week_checkins:
-                                created_at_local = to_manila_datetime(checkin['created_at'])
-                                previous_week_checkins += (
-                                f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                                # created_at_local = to_manila_datetime(checkin['created_at'])
+                                # previous_week_checkins += (
+                                # f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                                if checkin['energy_value'] is None:
+                                        previous_week_checkins += (
+                                        f" min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | summarized_insights_of_the_day: {checkin['texts_summary']}\n\n")
+                                else:
+                                        previous_week_checkins += (
+                                        f" energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_insights_of_the_day: {checkin['texts_summary']}\n")
+           
                 if len(_previous_months_checkins) > 0:
                         for checkin in _previous_months_checkins:
-                                previous_months_checkins += (
-                                f"month: {checkin['month']} | min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | median: {checkin['median']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | overall_mood_summary: {checkin['overall_mood_summary']} | comparison_insight_summary: {checkin['comparison_insight_summary']} | pattern_noticed_summary: {checkin['pattern_noticed_summary']} | mood_trend_summary: {checkin['mood_trend_summary']} | suggestions_summary: {checkin['suggestions_summary']}")
-       
+                                if checkin['energy_value'] is None:
+                                        previous_months_checkins += (
+                                        f"year: {checkin['year']} | month: {checkin['month']} | min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | summarized_insights_of_the_month: {checkin['texts_summary']}\n\n")
+                                else: 
+                                        previous_months_checkins += (
+                                        f"year: {checkin['year']} | month: {checkin['month']} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_insights_of_the_month: {checkin['texts_summary']}\n\n")
+                          
                 
                 # Please analyze my current state and provide personalized recommendations for what I can do today based on the following information:
                 user_template = f"""
@@ -247,22 +266,24 @@ class prompts:
 
 
 
-system_template = """
-- Analyze all provided states, considering interplay (e.g., low energy + anxious = restorative focus).
-- Prioritize safety and well-being; for conflicting states, address negative ones first.
-- Draw from evidence-based practices (CBT, mindfulness, exercise science, positive psychology).
-- Provide immediate, practical actions (not long-term therapy or medical advice).
-- Ensure recommendations are diverse (e.g., physical, mental, social) and positive.
+        def existing_system_template():
+                system_template = """
+                        - Analyze all provided states, considering interplay (e.g., low energy + anxious = restorative focus).
+                        - Prioritize safety and well-being; for conflicting states, address negative ones first.
+                        - Draw from evidence-based practices (CBT, mindfulness, exercise science, positive psychology).
+                        - Provide immediate, practical actions (not long-term therapy or medical advice).
+                        - Ensure recommendations are diverse (e.g., physical, mental, social) and positive.
 
-SAFETY GUIDELINES:
-- If concerning patterns detected, include gentle resource suggestions
-- Never provide medical or clinical diagnoses
-- Focus on empowerment and self-awareness, not pathology
-- For crisis indicators, prioritize immediate support resources over analysis
+                        SAFETY GUIDELINES:
+                        - If concerning patterns detected, include gentle resource suggestions
+                        - Never provide medical or clinical diagnoses
+                        - Focus on empowerment and self-awareness, not pathology
+                        - For crisis indicators, prioritize immediate support resources over analysis
 
-STRICT OUTPUT RULES:
-- Respond ONLY with a valid JSON object
-"""
+                        STRICT OUTPUT RULES:
+                        - Respond ONLY with a valid JSON object
+                        """
+                return system_template
    
 
 

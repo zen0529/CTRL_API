@@ -42,14 +42,14 @@ class EnergyStats(BaseModel):
     trend_slope: float
     
 class GenerateInsightsRequest(BaseModel):
-    energyLevel: int
+    energy_value: int
     feelings: Optional[list[str]] = None 
     emotionalIntelligenceQuestion: Optional[str] = None
     mirrorQuestion: Optional[str] = None
     
 
 class JoinedInsightRequest(BaseModel): 
-    energyLevel: int
+    energy_value: int
     feelings: Optional[str] = None 
     emotionalIntelligenceQuestion: Optional[str] = None
     mirrorQuestion: Optional[str] = None

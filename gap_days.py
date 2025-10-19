@@ -79,9 +79,9 @@ mood_trend_gap_messages = [
 def gap_messages( gap_days: int):
             """Return a random encouraging message based on the gap days."""
             gap_message = ""
-            if 2 <= gap_days <= 3:
+            if 4 <= gap_days <= 6:
                 gap_message = "short_gap_message"
-            elif 4 <= gap_days <= 6:
+            elif 7 <= gap_days <= 9:
                 gap_message = "medium_gap_message"
             else:
                 gap_message = "long_gap_message"
