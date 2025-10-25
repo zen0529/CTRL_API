@@ -1,26 +1,51 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import date, time
+
+
 class moodInsightOutputParser(BaseModel):
     overall_mood: str = Field(
-        description="Maximum 15 words. Format: 'Your overall mood today was [classification].' "
-                    "Classifications: Thriving, Positive, Stable, Neutral, Mixed, Challenging, Struggling."
+        description=(
+            "A short, natural-language summary (max 20 words) describing the user's overall emotional state. "
+            "It should sound reflective or observational — not formulaic. "
+            "Example: 'Energy feels low, but there’s a quiet sense of perseverance.'"
+        )
     )
+
     comparison_insight: str = Field(
-        description="Compare to timeframe (7 days, 2 weeks, etc). Max 2 sentences, 50 words. "
-                    "Start with 'Compared to the past [timeframe]...'"
+        description=(
+            "Compare the current state to previous data (yesterday, week, or month if available). "
+            "Highlight emotional or energetic changes. If no prior data, mention it naturally. "
+            "Max 2 sentences, 50 words. "
+            "Example: 'Compared to earlier check-ins, emotions feel more balanced though motivation still fluctuates.'"
+        )
     )
+    
     pattern_noticed: str = Field(
-        description="Identify ONE actionable correlation. Max 25 words. "
-                    "Format: '[Trigger/behavior] tends to correlate with [mood outcome]'."
+        description=(
+            "Identify one clear correlation between a feeling, thought, or behavior and a mood outcome. "
+            "Format: '[Trigger/behavior] tends to correlate with [mood outcome].' "
+            "Keep it specific and grounded. Max 25 words."
+        )
     )
+
     mood_trend: str = Field(
-        description="Describe mood direction over time. Max 30 words. "
-                    "Use words like 'stabilizing', 'declining', 'gradually improving'. Include timeframe."
+        description=(
+            "Describe the emotional trajectory over time (e.g., improving, stabilizing, declining, fluctuating). "
+            "Include timeframe if possible. Max 30 words. "
+            "Example: 'Mood appears to be gradually improving over the week, with more emotional steadiness emerging.'"
+        )
     )
+
     suggestions: str = Field(
-        description="1-2 concrete actions, max 40 words. Actionable suggestions based on the input."
+        description=(
+            "Provide 1–2 actionable, psychologically safe suggestions (max 40 words). "
+            "Tone should be gentle and supportive — never medical. "
+            "Example: 'Try spending a few quiet minutes journaling about what felt manageable today.'"
+        )
     )
+
+ 
 
 
 # class suggestionOutputParser(BaseModel):

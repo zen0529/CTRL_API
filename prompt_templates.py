@@ -3,7 +3,8 @@ import random
 from numerical_calculations import calculations
 # from fake_data import data
 from obtain_timezone import getTimeZone
-from checkins_repository import get_monthly_summaries, obtain_previous_checkins_of_the_current_week, obtain_previous_checkins_of_the_previous_week, to_manila_datetime
+from checkins_repository import get_monthly_summaries, obtain_previous_checkins_of_the_current_day, obtain_previous_checkins_of_the_current_week, obtain_previous_checkins_of_the_previous_week, to_manila_datetime
+import json
 
 class prompts: 
         
@@ -131,7 +132,7 @@ class prompts:
                 total_number_of_prev_checkins = 14
                 
                 prev_day_data = f"""
-                                - Enery Level (1-10): {joined_request.energyLevel}
+                                - Enery Level (1-10): {joined_request.energy_value}
                                 {f'- Energy States: {joined_request.energyStates}' if joined_request.energyStates else ''}
                                 {f'- Emotional States: {joined_request.emotionalStates}' if joined_request.emotionalStates else ''}
                                 {f'- Mental States: {joined_request.mentalStates}' if joined_request.mentalStates else ''}
@@ -167,7 +168,7 @@ class prompts:
                         
                 user_template_for_existing_user_days = f"""
                   "Today's mood check in:
-                        - Enery Level (1-10): {joined_request.energyLevel}
+                        - Enery Level (1-10): {joined_request.energy_value}
                         {f'- Energy States: {joined_request.energyStates}' if joined_request.energyStates else ''}
                         {f'- Emotional States: {joined_request.emotionalStates}' if joined_request.emotionalStates else ''}
                         {f'- Mental States: {joined_request.mentalStates}' if joined_request.mentalStates else ''}
@@ -176,49 +177,60 @@ class prompts:
                         {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
                         {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
 
-                        
                          """     
                 
                 return user_template_for_existing_user_days
         
         def existing_user_input_(self, joined_request, day, month, energy_levels):
                 """ User template input """
-                
-                numerical_calculations = calculations(energy_levels)
-                
+
+                _current_day_checkins =  obtain_previous_checkins_of_the_current_day(self.user_id, self.timezone)
                 _current_week_checkins =  obtain_previous_checkins_of_the_current_week(self.user_id, self.timezone)
                 _previous_week_checkins =  obtain_previous_checkins_of_the_previous_week(self.user_id, self.timezone)
                 _previous_months_checkins =  get_monthly_summaries(self.user_id)
                 
+                # print("checkins for the current week", _current_week_checkins)
+                # print("\n\ncheckins for the previous week", _previous_week_checkins)
+                # print("\n\ncheckins for the previous month", _previous_months_checkins)
                 
-                current_week_checkins = f'Last {day}-day check-ins:\n'   
+                current_day_checkins = f'Current day check-ins:\n'
+                current_week_checkins = f'current week check-ins:\n'   
                 previous_week_checkins = 'Previous week check-ins:\n'
                 previous_months_checkins = 'Previous month(s) check-in:\n'
                 
-                                                                                                                       
+                
+                if len(_current_day_checkins) > 0:
+                        checkin_len = len(_current_day_checkins)
+                        index = checkin_len
+                        for checkin in _current_day_checkins:
+                                current_day_checkins += (
+                                        f" {index}. energy level: {checkin['energy_value']} | feelings: {','.join(json.loads(checkin['feelings'])) if checkin.get('feelings') else ''} |  avoided emotion: {checkin['avoided_emotion']} | mirror question answer: {checkin['mirror_question']} \n")
+                                index -= 1
+                        print("Im done in current day checkins")
+                                
+                                                                                                                        
                 if len(_current_week_checkins) > 0:
                         for checkin in _current_week_checkins:
-                                # created_at_local = to_manila_datetime(checkin['created_at'])
-                                # current_week_checkins += (
-                                # f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
+                                print('checkin current week: ', checkin)
                                 if checkin['energy_value'] is None:
                                         current_week_checkins += (
                                         f" min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | summarized_text: {checkin['texts_summary']}\n\n")
                                 else:
                                         current_week_checkins += (
-                                        f" energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_text: {checkin['texts_summary']}\n")
+                                        f" energy level: {checkin['energy_value']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_text: {checkin['texts_summary']}\n")
+                        print("Im done in current week checkins")
+               
                 if len(_previous_week_checkins) > 0:
                         for checkin in _previous_week_checkins:
                                 # created_at_local = to_manila_datetime(checkin['created_at'])
                                 # previous_week_checkins += (
-                                # f"date: {created_at_local.date()} | {'morning' if created_at_local.date().hour < 12 else 'afternoon'} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | emotional_intelligence_question: {checkin['emotional_intelligence_question'] if checkin['emotional_intelligence_question'] else ''} | mirror_question: {checkin['mirror_question'] if checkin['mirror_question'] else ''}\n")
                                 if checkin['energy_value'] is None:
                                         previous_week_checkins += (
                                         f" min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | summarized_insights_of_the_day: {checkin['texts_summary']}\n\n")
                                 else:
                                         previous_week_checkins += (
-                                        f" energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_insights_of_the_day: {checkin['texts_summary']}\n")
-           
+                                        f" energy level: {checkin['energy_value']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_insights_of_the_day: {checkin['texts_summary']}\n")
+                        print("Im done in last week checkins")
                 if len(_previous_months_checkins) > 0:
                         for checkin in _previous_months_checkins:
                                 if checkin['energy_value'] is None:
@@ -226,28 +238,25 @@ class prompts:
                                         f"year: {checkin['year']} | month: {checkin['month']} | min: {checkin['min']} | max: {checkin['max']} | mean: {checkin['mean']} | std_dev: {checkin['std_dev']} | trend_slope: {checkin['trend_slope']} | summarized_insights_of_the_month: {checkin['texts_summary']}\n\n")
                                 else: 
                                         previous_months_checkins += (
-                                        f"year: {checkin['year']} | month: {checkin['month']} | energy level: {checkin['energy_level']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_insights_of_the_month: {checkin['texts_summary']}\n\n")
+                                        f"year: {checkin['year']} | month: {checkin['month']} | energy level: {checkin['energy_value']} | feelings: {', '.join(checkin['feelings']) if checkin['feelings'] else ''} | summarized_insights_of_the_month: {checkin['texts_summary']}\n\n")
                           
-                
+                        print("Im done in last month checkins")
                 # Please analyze my current state and provide personalized recommendations for what I can do today based on the following information:
                 user_template = f"""
                 
                 "Today's mood check in:
-                - Enery Level (1-10): {joined_request.energyLevel}
-                {f'- Energy States: {joined_request.energyStates}' if joined_request.energyStates else ''}
-                {f'- Emotional States: {joined_request.emotionalStates}' if joined_request.emotionalStates else ''}
-                {f'- Mental States: {joined_request.mentalStates}' if joined_request.mentalStates else ''}
-                {f'- Social/Relational States: {joined_request.socialOrRelationalStates}' if joined_request.socialOrRelationalStates else ''}
-                {f'- Achievement/Purpose States: {joined_request.achievementOrPurposeStates}' if joined_request.achievementOrPurposeStates else ''}
-                {f'- Emotional Intelligence Question: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
-                {f'- Mirror Question: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
+                - Enery Level (1-10): {joined_request.energy_value}
+                {f'- Feelings: {joined_request.feelings}' if joined_request.feelings else ''}
+                {f'- Emotional Question Answer: {joined_request.emotionalIntelligenceQuestion}' if joined_request.emotionalIntelligenceQuestion else ''}
+                {f'- Mirror Question Answer: {joined_request.mirrorQuestion}' if joined_request.mirrorQuestion else ''}
+                
+                {current_day_checkins if len(current_day_checkins) > 0 else ''}
                 
                 {current_week_checkins if len(previous_week_checkins) > 0 else ''}
                 
                 {previous_week_checkins if len(previous_week_checkins) > 0 else ''}
                 
                 {previous_months_checkins if len(previous_months_checkins) > 0 else ''}
-                     
                 """
                 
                 return user_template
@@ -266,22 +275,59 @@ class prompts:
 
 
 
-        def existing_system_template():
+        def existing_system_template(self):
                 system_template = """
-                        - Analyze all provided states, considering interplay (e.g., low energy + anxious = restorative focus).
-                        - Prioritize safety and well-being; for conflicting states, address negative ones first.
-                        - Draw from evidence-based practices (CBT, mindfulness, exercise science, positive psychology).
-                        - Provide immediate, practical actions (not long-term therapy or medical advice).
-                        - Ensure recommendations are diverse (e.g., physical, mental, social) and positive.
+                       You are an empathetic and psychologically informed mood analysis assistant.
 
-                        SAFETY GUIDELINES:
-                        - If concerning patterns detected, include gentle resource suggestions
-                        - Never provide medical or clinical diagnoses
-                        - Focus on empowerment and self-awareness, not pathology
-                        - For crisis indicators, prioritize immediate support resources over analysis
+                        Your task is to analyze a sequence of user reflections to generate a concise, emotionally intelligent insight.
 
-                        STRICT OUTPUT RULES:
-                        - Respond ONLY with a valid JSON object
+                        The provided input includes (in descending order of priority):
+
+                        Current Check-in — energy level (1–10), selected feelings, Emotional Intelligence answer, and Mirror Question answer.
+
+                        Previous Check-ins from the Same Day — earlier emotional states and reflections (if available). 
+
+                        Summarized Reflections from Previous Days in the Current Week (if available).
+
+                        Summarized Weekly and Monthly Insights (if available).
+
+                        Each input builds a timeline of emotional experience. Your job is to understand this evolving pattern and generate an insight that captures:
+
+                        The current emotional state
+
+                        The continuity or shift compared to earlier check-ins today
+
+                        The connection to larger weekly or monthly emotional themes
+
+                        A reflective takeaway that feels supportive, not prescriptive
+
+                        Analytical Focus
+
+                        Current Emotional Theme: Identify the user’s present state (e.g., tension, calm, fatigue, hope).
+
+                        Intra-day Dynamics: Detect emotional fluctuations or consistencies across multiple check-ins today.
+
+                        Long-term Context: Recognize recurring patterns or progress from previous summaries.
+
+                        Emotional Needs: Infer underlying needs (rest, reassurance, clarity, connection, etc.) subtly within reflection.
+
+                        Safety and Sensitivity:
+
+                        Avoid medical or clinical terms.
+
+                        If distress signals appear (e.g., hopelessness, exhaustion), respond with brief compassion and mention gentle support (e.g., “It might help to reach out to someone you trust.”).
+
+                        Keep tone empowering, never diagnostic.
+
+                        Output Style
+
+                        Tone: Warm, insightful, and psychologically grounded.
+
+                        Voice: Reflective observation, not instruction or judgment.
+
+                        Language: Natural and emotionally intelligent — avoid formulaic phrasing or temporal anchors (“yesterday”, “today”).
+
+                        Length limits: Respect the constraints of each field from the provided schema.
                         """
                 return system_template
    
@@ -289,6 +335,21 @@ class prompts:
 
 
 
+
+# - Analyze all provided states, considering interplay (e.g., low energy + anxious = restorative focus).
+#                         - Prioritize safety and well-being; for conflicting states, address negative ones first.
+#                         - Draw from evidence-based practices (CBT, mindfulness, exercise science, positive psychology).
+#                         - Provide immediate, practical actions (not long-term therapy or medical advice).
+#                         - Ensure recommendations are diverse (e.g., physical, mental, social) and positive.
+
+#                         SAFETY GUIDELINES:
+#                         - If concerning patterns detected, include gentle resource suggestions
+#                         - Never provide medical or clinical diagnoses
+#                         - Focus on empowerment and self-awareness, not pathology
+#                         - For crisis indicators, prioritize immediate support resources over analysis
+
+#                         STRICT OUTPUT RULES:
+#                         - Respond ONLY with a valid JSON object
 
 # OUTPUT FORMAT RULES:
 

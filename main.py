@@ -32,8 +32,9 @@ def read_root():
           )
 async def generate_insights(request: GenerateInsightsRequest, user_timezone: str, user_id:str):
     # print("\nrequest", request)
-    # Daily_Action = await LLM_Query(request, user_id ,user_timezone)
-    # return Daily_Action
+    
+    Daily_Action = await LLM_Query(request, user_id ,user_timezone)
+    return Daily_Action
 
     # with open("mockdata.json", "r") as f:
     #     mock_data = json.load(f)
@@ -76,8 +77,8 @@ async def generate_insights(request: GenerateInsightsRequest, user_timezone: str
     
     # lol1 = await summarize_monthly_checkins(user_id, user_timezone)
     # lol1 = get_monthly_summaries(user_id)
-    lol1 = get_days_since_last_checkin(user_id, user_timezone)
-    return lol1
+    # lol1 = obtain_previous_checkins_of_the_current_week(user_id, user_timezone)
+    # return lol1
 
 
 

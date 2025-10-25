@@ -53,6 +53,8 @@ def is_new_user_with_checkin(user_id: str) -> bool:
     return True  
 
 
+
+
 def get_days_since_last_checkin(user_id: str, timezone: str) -> int:
     """
     Calculate the number of days between the user's most recent check-in 
@@ -109,11 +111,42 @@ def query(user_id: str):
     
     return response.data
     
+
+def obtain_previous_checkins_of_the_current_day(user_id: str, user_timezone: str):
+    """Return the previous check-ins of the current day for the user"""
     
+    _get_Timezone = getTimeZone(user_timezone)
+    now = _get_Timezone.current_date
+    
+    # Query all yesterday's data
+    start_datetime = f"{now.isoformat()}T00:00:00+00"
+    end_datetime = f"{now.isoformat()}T23:59:59+00"
+    
+    # Fetch all check-ins for the previous day
+    response = (
+        SUPABASE.table("mood_checkIns")
+        .select("*")
+        .eq("user_id", user_id)
+        .gte("created_at", start_datetime)
+        .lte("created_at", end_datetime)
+        .execute()
+    )
+     
+    if not response.data:
+        print(f"No previous day's check-ins found for user {user_id}.")
+        return []
+    
+    return response.data
+    
+
 
 def obtain_previous_checkins_of_the_current_week(user_id: str, user_timezone: str):
     """Return the previous check-ins of the current week for the user."""
+    
+    print("pre user timezone: ", user_timezone)
     _user_timezone = getTimeZone(user_timezone) 
+    
+    print("_user_timezone: ", _user_timezone)
     current_date = _user_timezone.current_date  
     
     print("current date: ", current_date)
@@ -149,7 +182,9 @@ def obtain_previous_checkins_of_the_current_week(user_id: str, user_timezone: st
             .execute()
         )
         if not response.data:
-            return "No check-ins found for the current week."
+            print("No check-ins found for the current week.")
+        
+        print("current week's check-ins: ", response.data)
         return response.data
         
     except Exception as e:
@@ -187,7 +222,8 @@ def obtain_previous_checkins_of_the_previous_week(user_id: str, user_timezone: s
         )
         if not response.data:
             print(f"No previous week's check-ins found for user {user_id}.")
-            
+    
+        print("current week's check-ins: ", response.data)
         return response.data
     except Exception as e:
         print(f"❌ Error fetching previous week's check-ins: {e}")

@@ -81,7 +81,6 @@ async def summarize_previous_day_checkins(user_id: str, user_timezone: str):
         
         
     else: 
-
         for checkin in checkins:
             mq = checkin.get("mirror_question")
             ae = checkin.get("avoided_emotion")

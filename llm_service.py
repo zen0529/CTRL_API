@@ -71,7 +71,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
     # instantiate the prompt class
     joined_request = Join_States(request)
     
-    prompt = prompts(joined_request=joined_request, user_id=user_id, timezone=timezone) 
+    prompt = prompts(joined_request=joined_request, user_id=user_id, timezone=user_timezone) 
     
     parser = JsonOutputParser(pydantic_object=moodInsightOutputParser)
     
@@ -86,8 +86,8 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         system_template = prompt.new_user_system_template()
         user_template =  prompt.new_user_template()
     
-    # print("system template", system_template)
-    # print("user template",user_template)
+    print("\n\nsystem template", system_template)
+    print("\n\nuser template",user_template)
     
     # create the parser for output formatting
     # print(f"parser: {parser}")
@@ -114,48 +114,46 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         # generated insights 
         insights = parser.parse(response.content)
         
+        if hasattr(insights, "dict"):
+                try:
+                    insights = insights.dict()
+                except Exception:
+                    insights = json.loads(json.dumps(insights))
+        elif not isinstance(insights, dict):
+            insights = dict(insights)
         
         print("insights: ", type(insights))
 
         print("insights overall mood: ", insights['overall_mood'])
         
         print("energy value:", request.energy_value)
-        # print(insights['overall_mood'])
         if user_type == "new_user":
             insights['overall_mood'] = overall_mood(request.energy_value)
-            insights['comparison_insight'] = f"""This is your baseline - we'll help you understand patterns as you continue checking in. \nEven this single entry tells us you're someone who values self-awareness."""
+            insights['comparison_insight'] = random.choice(new_user_comparison_insights) 
             insights['pattern_noticed'] = random.choice(pattern_messages_for_new_users) 
             insights['mood_trend'] = random.choice(mood_trend_messages_for_new_users)
-            print("New User insights: ", insights)
-        else:
-            # obtain gap messages depending on days missed
+            print("New User insights: ", insights)  
+            return insights
             
-            # continue this part
+        else:
             gap_days = get_days_since_last_checkin(user_id, user_timezone)
             gap_message = gap_messages(gap_days)
+            insights['overall_mood'] = overall_mood(request.energy_value)
             
-            
+            print("gap days: naur ", gap_days)
+            print("insights overall mood:",  insights['overall_mood'])
             if gap_days >= 4:
                 insights['overall_mood'] = overall_mood(request.energy_value)
                 insights['comparison_insight'] = gap_message
-                    # if gap_days >= 3:
                 insights['pattern_noticed'] = random.choice(pattern_gap_messages).format(days=gap_days)
-                insights['mood_trend'] = random.choice(mood_trend_gap_messages).format(days=gap_days) #why only mood trend, pattern noticed...? because LLM will generate the suggestion
-                return insights
-            else:
-                return insights
-            # checks if user has missed more than 3 days then add pattern/mood trend messages to encourage checking in
-            
+                insights['mood_trend'] = random.choice(mood_trend_gap_messages).format(days=gap_days) 
+            print(" insights: ", insights)
+            return insights
         
-        print("insights: ", insights)
-        # add  to prompt: watch also for missing checkin days cause that will also give insights
         
-        # print(f"insights: {insights}")
-        # print(f"date_now: {date_now}")
-        return insights
         
-        # # return response.content
-        # return parser.parse(response.content)
+        # return insights
+        
 
     except Exception as e:
         print(f"Primary model failed: {e}")
@@ -164,12 +162,52 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str,  user_timezo
         try:
             response = await FALLBACK_LLM.ainvoke(messages)
             
+            print("\n\nresponse content", response.content)
+            print("\n\nresponse content type", type(response.content))
+            
+            # generated insights 
             insights = parser.parse(response.content)
             
-            insights['comparison_insight'] = f"""This is your baseline - we'll help you understand patterns as you continue checking in. \nEven this single entry tells us you're someone who values self-awareness."""
-                        
-            print(f"insights: {insights}")
-            return insights
+            if hasattr(insights, "dict"):
+                try:
+                    insights = insights.dict()
+                except Exception:
+                    insights = json.loads(json.dumps(insights))
+            elif not isinstance(insights, dict):
+                insights = dict(insights)
+            
+            print("insights: ", type(insights))
+
+            print("insights overall mood: ", insights['overall_mood'])
+            
+            print("energy value:", request.energy_value)
+            print("energy value type:", type(request.energy_value))
+            
+            if user_type == "new_user":
+                insights['overall_mood'] = overall_mood(request.energy_value)
+                insights['comparison_insight'] = random.choice(new_user_comparison_insights) 
+                insights['pattern_noticed'] = random.choice(pattern_messages_for_new_users) 
+                insights['mood_trend'] = random.choice(mood_trend_messages_for_new_users)
+                print("New User insights: ", insights)  
+                return insights
+                
+            else:
+                gap_days = get_days_since_last_checkin(user_id, user_timezone)
+                gap_message = gap_messages(gap_days)
+                print("request energy value", request.energy_value)
+                insights['overall_mood'] = overall_mood(request.energy_value)
+                
+                print("gap days: naur ", gap_days)
+                print("insights overall mood: fallback",  insights['overall_mood'])
+                if gap_days >= 4:
+                    insights['overall_mood'] = overall_mood(request.energy_value)
+                    insights['comparison_insight'] = gap_message
+                    insights['pattern_noticed'] = random.choice(pattern_gap_messages).format(days=gap_days)
+                    insights['mood_trend'] = random.choice(mood_trend_gap_messages).format(days=gap_days) 
+                print("insights fallback: ", insights)
+                return insights
+            
+            
         except Exception as fallback_e:
             print(f"Messages: {messages}")
             error_msg = f"Both models failed: {fallback_e}" 
@@ -184,20 +222,32 @@ def new__user_query(request: GenerateInsightsRequest):
     pass
 
 async def summarize_insight_daily(input_text: str):
+    
     system_template = """
-   You are an empathetic mood analysis assistant helping the user understand their emotional progress over time.
+    You are an empathetic mood analysis assistant helping the user understand their emotional progress over time.
 
-    You are given the summarized check-ins from the previous day. 
-    Write a reflective insight that helps the user carry forward emotional awareness into the new day.
+    You are given the user’s most recent check-in answers. Each check-in consists of two responses:
+
+    Emotional Intelligence Question: "What emotions are you avoiding right now? How is this avoidance limiting your potential?"
+    Mirror Question: "What would you tell someone else facing this exact situation?"
+
+    Your task is to summarize the emotional pattern, mindset, and underlying need reflected in the user’s responses.
+
+    The summary should sound like an internal reflection — warm, psychologically insightful, and emotionally aware.
+
+    Do not refer to time (e.g., avoid “yesterday,” “today,” or “recently”).
 
     Focus on:
-    - The emotional pattern or lesson from yesterday
-    - The underlying need or mindset that emerged
-    - A short, supportive takeaway or reflection for today
 
-    Use warm, psychologically insightful language that sounds like a personal reflection — not advice or instruction. 
-    Limit your response to 50 words.
-    Respond with the insight only.
+    The emotional lesson or pattern shown in the responses
+
+    The user’s emerging mindset or growth direction
+
+    A short, supportive takeaway that captures their inner state
+
+    Output only one paragraph, limited to 50 words.
+
+    Respond with the insight only — no prefaces, labels, or meta-text.
 
     Here is the user's input:
     {input_text}
@@ -220,23 +270,32 @@ async def summarize_insight_daily(input_text: str):
 
 async def summarize_insight_monthly(input_text: str):
     system_template = """
-   You are an empathetic psychological insight assistant.
+    You are an empathetic mood analysis assistant helping the user understand their emotional growth over time.
 
-    You will receive the user's daily mood summaries for the previous month.
-    Your task is to synthesize these into a single monthly reflection that captures the user's emotional journey and growth.
+    You are given a collection of daily reflective insights — each one summarizes the user’s emotional state and mindset from individual check-ins.
 
-    Focus on revealing:
-    - The recurring emotions or mental themes throughout the month
-    - Any visible emotional progress, realizations, or patterns of avoidance
-    - The overall tone shift (e.g., from self-doubt to acceptance, confusion to clarity)
-    - Key lessons or mindsets the user seems to be developing
+    Your task is to synthesize these daily insights into one cohesive reflection that captures the user’s overall emotional evolution, recurring patterns, and emerging lessons.
 
-    Write in a supportive, reflective tone that sounds like a compassionate monthly self-review.
-    Keep the response between 80–100 words.
-    Respond only with the final reflection — no explanations, analysis steps, or commentary.
+    Focus on:
+
+    The emotional themes or patterns appearing throughout the insights
+
+    Signs of healing, progress, or recurring inner struggles
+
+    The deeper emotional needs or beliefs guiding the user’s journey
+
+    A reflective and compassionate tone that conveys understanding and continuity
+
+    Avoid references to time (e.g., “throughout the month,” “lately,” “in recent days”).
+
+    The summary should sound timeless, gentle, and psychologically insightful — as if capturing the essence of the user’s inner journey in one paragraph.
+
+    Limit to 80 words.
+
+    Respond with the reflection only — no prefaces or labels.
 
 
-    Here is the user's last months summarized mood checkins:
+    Here is the user's last months daily checkins:
     {input_text}
     """
 
