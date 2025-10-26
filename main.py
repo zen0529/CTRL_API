@@ -86,13 +86,13 @@ async def generate_insights(request: GenerateInsightsRequest, user_timezone: str
 @app.post("/summarize_daily")
 async def summarize_daily( user_timezone: str, user_id:str):
     # data = await request.json() 
-    result = summarize_previous_day_checkins(user_id, user_timezone)
+    result = await summarize_previous_day_checkins(user_id, user_timezone)
     return {"status": "ok", "message": "Daily summary completed", "user_id": user_id}
 
 
 @app.post("/summarize_monthly")
 async def summarize_monthly(user_timezone: str, user_id:str):
-    result = summarize_monthly_checkins(user_id, user_timezone)
+    result = await summarize_monthly_checkins(user_id, user_timezone)
     return {"status": "ok", "message": "Monthly summary completed", "user_id": user_id}
 
 
