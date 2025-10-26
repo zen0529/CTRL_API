@@ -1,0 +1,10 @@
+﻿APScheduler==3.11.0
+langchain-community==0.3.29
+langchain-openai==0.3.32
+langsmith==0.4.21
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+pytz==2025.2
+supabase==2.20.0
+
+

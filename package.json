@@ -1,0 +1,23 @@
+{
+  "name": "ctrl_api",
+  "version": "1.0.0",
+  "description": "python -m venv CTRL_Venv",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zen0529/CTRL_API.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zen0529/CTRL_API/issues"
+  },
+  "homepage": "https://github.com/zen0529/CTRL_API#readme",
+  "devDependencies": {
+    "serverless-python-requirements": "^6.1.2"
+  }
+}

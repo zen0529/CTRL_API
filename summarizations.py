@@ -37,6 +37,7 @@ async def summarize_previous_day_checkins(user_id: str, user_timezone: str):
         .eq("user_id", user_id)
         .gte("created_at", start_datetime)
         .lte("created_at", end_datetime)
+        .order("created_at", desc=False)
         .execute()
     )
      
@@ -144,13 +145,13 @@ def is_start_of_month(date: datetime.date) -> bool:
 async def summarize_monthly_checkins(user_id: str, timezone):
     """Generate and store a monthly summary if it's the end of the month."""
     
-    timezone = "Asia/Manila"
+    # timezone = "Asia/Manila"
     _get_Timezone = getTimeZone(timezone)  
     
     # 1️⃣ Check if today is the last day of the month
-    # if not is_start_of_month(_get_Timezone.current_date):
-    #     print("Not end of month. Skipping summary generation.")
-    #     return
+    if not is_start_of_month(_get_Timezone.current_date):
+        print("Not start of month. Skipping summary generation.")
+        return "not the end of the month"
 
     current_date = _get_Timezone.current_date
     
@@ -177,6 +178,7 @@ async def summarize_monthly_checkins(user_id: str, timezone):
         .eq("user_id", user_id)
         .gte("checkin_day", start_of_prev_month.isoformat())
         .lte("checkin_day", end_of_prev_month.isoformat())
+        .order("checkin_day", desc=False)
         .execute()  
     )
     

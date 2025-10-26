@@ -1,0 +1,11 @@
+#when updating changes within the code:
+
+serverless deploy function -f hourlySummaryCheck
+
+#when updating something in serverless.yml:
+
+serverless deploy
+
+#when running:
+
+serverless invoke -f hourlySummaryCheck --log

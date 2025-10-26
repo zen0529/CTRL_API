@@ -1,0 +1,288 @@
+{
+  "service": {
+    "service": "checkin-scheduler",
+    "serviceObject": {
+      "name": "checkin-scheduler"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "python3.11",
+      "region": "us-east-1",
+      "stage": "prod",
+      "timeout": 300,
+      "memorySize": 256,
+      "environment": {
+        "SUPABASE_URL": "\"https://cyyjhikodckjcbicnplg.supabase.co\"",
+        "SUPABASE_KEY": "sb_secret_Sbx4P4stpVQclZLrEWvJtw_F-d7M1JY"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      },
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "HourlySummaryCheckLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/checkin-scheduler-prod-hourlySummaryCheck"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "checkin-scheduler",
+                        "prod",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/checkin-scheduler-prod*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/checkin-scheduler-prod*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iam\"][\"role\"][\"statements\"][0]"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "checkin-scheduler",
+                    "prod",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "HourlySummaryCheckLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-50bd04ba-944a",
+                "S3Key": "serverless/checkin-scheduler/prod/1761471701574-2025-10-26T09:41:41.574Z/checkin-scheduler.zip"
+              },
+              "Handler": "lambda_handler.lambda_handler",
+              "Runtime": "python3.11",
+              "FunctionName": "checkin-scheduler-prod-hourlySummaryCheck",
+              "MemorySize": 256,
+              "Timeout": 300,
+              "Description": "Hourly check for daily and monthly summaries",
+              "Environment": {
+                "Variables": {
+                  "SUPABASE_URL": "\"https://cyyjhikodckjcbicnplg.supabase.co\"",
+                  "SUPABASE_KEY": "sb_secret_Sbx4P4stpVQclZLrEWvJtw_F-d7M1JY"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "HourlySummaryCheckLogGroup"
+            ]
+          },
+          "HourlySummaryCheckLambdaVersionkrCnSERrjhPBEvb02GVztSSudBDncBLu7yJcLlVE": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "HourlySummaryCheckLambdaFunction"
+              },
+              "CodeSha256": "JQAmvA76y4D5PQTiQZ1sZgFKCMzghhgFIPvd4HPPR4A=",
+              "Description": "Hourly check for daily and monthly summaries"
+            }
+          },
+          "HourlySummaryCheckEventsRuleSchedule1": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "ScheduleExpression": "rate(1 hour)",
+              "State": "ENABLED",
+              "Description": "Triggers every hour to check for pending summaries",
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "HourlySummaryCheckLambdaFunction",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "hourlySummaryCheckSchedule"
+                }
+              ]
+            }
+          },
+          "HourlySummaryCheckLambdaPermissionEventsRuleSchedule1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "HourlySummaryCheckLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "events.amazonaws.com",
+              "SourceArn": {
+                "Fn::GetAtt": [
+                  "HourlySummaryCheckEventsRuleSchedule1",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "serverless-framework-deployments-us-east-1-50bd04ba-944a",
+            "Export": {
+              "Name": "sls-checkin-scheduler-prod-ServerlessDeploymentBucketName"
+            }
+          },
+          "HourlySummaryCheckLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "HourlySummaryCheckLambdaVersionkrCnSERrjhPBEvb02GVztSSudBDncBLu7yJcLlVE"
+            },
+            "Export": {
+              "Name": "sls-checkin-scheduler-prod-HourlySummaryCheckLambdaFunctionQualifiedArn"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "custom": {
+      "pythonRequirements": {
+        "dockerizePip": false,
+        "layer": false,
+        "slim": true,
+        "strip": false,
+        "fileName": "lambda_requirements.txt"
+      }
+    },
+    "plugins": [
+      "serverless-python-requirements"
+    ],
+    "pluginsData": {},
+    "functions": {
+      "hourlySummaryCheck": {
+        "handler": "lambda_handler.lambda_handler",
+        "description": "Hourly check for daily and monthly summaries",
+        "events": [
+          {
+            "schedule": {
+              "rate": [
+                "rate(1 hour)"
+              ],
+              "enabled": true,
+              "description": "Triggers every hour to check for pending summaries"
+            }
+          }
+        ],
+        "name": "checkin-scheduler-prod-hourlySummaryCheck",
+        "package": {},
+        "memory": 256,
+        "timeout": 300,
+        "runtime": "python3.11",
+        "vpc": {},
+        "versionLogicalId": "HourlySummaryCheckLambdaVersionkrCnSERrjhPBEvb02GVztSSudBDncBLu7yJcLlVE"
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless",
+    "initialServerlessConfig": {
+      "service": "checkin-scheduler",
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      },
+      "plugins": {
+        "$ref": "$[\"service\"][\"plugins\"]"
+      },
+      "custom": {
+        "$ref": "$[\"service\"][\"custom\"]"
+      }
+    },
+    "appId": null,
+    "orgId": null,
+    "layers": {},
+    "artifact": "C:\\Users\\SEJI\\desktop\\CTRL_API\\.serverless\\checkin-scheduler.zip"
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/checkin-scheduler/prod/1761471701574-2025-10-26T09:41:41.574Z",
+    "artifact": "checkin-scheduler.zip"
+  }
+}

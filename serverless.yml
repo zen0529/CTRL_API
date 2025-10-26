@@ -1,0 +1,44 @@
+service: checkin-scheduler
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1  # Change to your preferred region
+  stage: ${opt:stage, 'prod'}
+  timeout: 300  # 5 minutes max (adjust if needed)
+  memorySize: 256  # MB (increase if summarization needs more memory)
+  
+  environment:
+    SUPABASE_URL: ${env:SUPABASE_URL}
+    SUPABASE_KEY: ${env:SUPABASE_API_KEY}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
+
+functions:
+  hourlySummaryCheck:
+    handler: lambda_handler.lambda_handler
+    description: Hourly check for daily and monthly summaries
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+          description: Triggers every hour to check for pending summaries
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: false
+    layer: false
+    slim: true
+    strip: false
+    fileName: lambda_requirements.txt 

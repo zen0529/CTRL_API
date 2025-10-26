@@ -25,7 +25,7 @@ def read_root():
     return {"status": "FastAPI deployed successfully"}
 
 # Request to generate the action based on the user states   
-@app.post("/Generate_Insights",
+@app.post("/generate_insights",
            operation_id="recommendActions",   
            summary="Recommend Actions",       
            tags=["Recommendation"]    
@@ -33,8 +33,8 @@ def read_root():
 async def generate_insights(request: GenerateInsightsRequest, user_timezone: str, user_id:str):
     # print("\nrequest", request)
     
-    Daily_Action = await LLM_Query(request, user_id ,user_timezone)
-    return Daily_Action
+    # Daily_Action = await LLM_Query(request, user_id ,user_timezone)
+    # return Daily_Action
 
     # with open("mockdata.json", "r") as f:
     #     mock_data = json.load(f)
@@ -75,12 +75,35 @@ async def generate_insights(request: GenerateInsightsRequest, user_timezone: str
     # """
     # lol1 = await summarize_previous_day_checkins(user_id, user_timezone)
     
-    # lol1 = await summarize_monthly_checkins(user_id, user_timezone)
-    # lol1 = get_monthly_summaries(user_id)
+    lol1 = await summarize_monthly_checkins(user_id, user_timezone)
+    # lol1 = get_monthly_summaries(user_id, user_timezone)
     # lol1 = obtain_previous_checkins_of_the_current_week(user_id, user_timezone)
-    # return lol1
+    
+    # lol1 = await summarize_previous_day_checkins(user_id, user_timezone)
+    return lol1
 
 
+@app.post("/summarize_daily")
+async def summarize_daily( user_timezone: str, user_id:str):
+    # data = await request.json() 
+    result = summarize_previous_day_checkins(user_id, user_timezone)
+    return {"status": "ok", "message": "Daily summary completed", "user_id": user_id}
+
+
+@app.post("/summarize_monthly")
+async def summarize_monthly(user_timezone: str, user_id:str):
+    result = summarize_monthly_checkins(user_id, user_timezone)
+    return {"status": "ok", "message": "Monthly summary completed", "user_id": user_id}
+
+
+def update_last_summary_date(user_id, summary_type, summary_date):
+    """Update last_daily_summary or last_monthly_summary in Supabase."""
+    column = f"last_{summary_type}_summary"
+    try:
+        SUPABASE.table("users").update({column: str(summary_date)}).eq("user_id", user_id).execute()
+        print(f"✅ Updated {column} for user {user_id} to {summary_date}")
+    except Exception as e:
+        print(f"❌ Failed to update {column} for user {user_id}: {e}")
 
 if __name__ == "__main__":
     import uvicorn
