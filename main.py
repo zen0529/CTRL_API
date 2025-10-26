@@ -4,7 +4,7 @@ from checkins_repository import get_days_since_last_checkin, get_monthly_summari
 from llm_service import LLM_Query
 from setup import *
 from models import GenerateInsightsRequest
-from mangum import Mangum
+from main import app
 # from llm_service import LLM_Query
 from summarizations import summarize_monthly_checkins, summarize_previous_day_checkins
 # from worker import daily_summary_job, get_all_users
@@ -110,4 +110,4 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
     
-handler = Mangum(app, lifespan="off")
+# handler = Mangum(app, lifespan="off")
