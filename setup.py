@@ -1,5 +1,7 @@
 from os import getenv
 from dotenv import load_dotenv, dotenv_values
+import site
+from pathlib import Path
 
 load_dotenv()
 
@@ -9,16 +11,23 @@ from supabase import create_client, Client # type: ignore
 import requests
 
 
-# Load environment variables
-# See what dotenv actually loaded
-config = dotenv_values(".env")
-print("All env variables from .env:")
-for key, value in config.items():
-    print(f"  {key}: {value[:10] if value else 'None'}...")
+site_packages = site.getsitepackages()[0]
+site_packages_path = Path(site_packages) / "site-packages"
+if not site_packages_path.exists():
+    site_packages_path = Path(site_packages)
+
+sizes = []
+for pkg in site_packages_path.iterdir():
+    if pkg.is_dir() and not pkg.name.startswith("_") and pkg.name != "__pycache__":
+        size = sum(f.stat().st_size for f in pkg.rglob('*') if f.is_file()) / (1024**2)
+        sizes.append((size, pkg.name))
+
+for size, name in sorted(sizes, reverse=True)[:20]:
+    print(f"{size:8.2f} MB  {name}")
+
 
 # Check if the key exists
 api_key = getenv("OPENROUTER_API_KEY")
-print(f"\ngetenv result: {repr(api_key)}")
 
 SUPABASE_URL = getenv("SUPABASE_URL")
 SUPABASE_KEY = getenv("SUPABASE_API_KEY") #SUPABASE_KEY

@@ -1,11 +1,9 @@
 from datetime import timedelta, datetime
 from zoneinfo import ZoneInfo
 from llm_service import summarize_insight_daily, summarize_insight_monthly
-from scipy.stats import linregress
 from numerical_calculations import calculations
 from obtain_timezone import getTimeZone
 from setup import SUPABASE
-import numpy as np
 import calendar
 
 

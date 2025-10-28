@@ -4,7 +4,6 @@ from obtain_timezone import getTimeZone
 from setup import SUPABASE
 import calendar
 from numerical_calculations import calculations
-import numpy as np
 import calendar
 from zoneinfo import ZoneInfo
 

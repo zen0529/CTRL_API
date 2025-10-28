@@ -3,7 +3,6 @@ from gap_days import *
 from obtain_timezone import getTimeZone
 from models import *
 from fastapi import HTTPException
-from progressive_insights.first_day_insight import NewUserInsightGenerator
 from prompt_templates import *
 from checkins_repository import check_which_user, get_days_since_last_checkin, is_new_user, is_new_user_with_checkin
 from setup import *
