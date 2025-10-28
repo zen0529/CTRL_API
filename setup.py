@@ -1,48 +1,62 @@
 from os import getenv
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
+
+load_dotenv()
+
 from langchain_openai import ChatOpenAI
 from fastapi.security import APIKeyHeader
-from langchain_chroma import Chroma # type: ignore
-from langchain_huggingface import HuggingFaceEmbeddings #type: ignore
 from supabase import create_client, Client # type: ignore
-
-model_name = "sentence-transformers/all-MiniLM-L6-v2"
-model_kwargs = {'device': 'cpu'}
-encode_kwargs = {'normalize_embeddings': False}
-
-SBERT_EMBEDDING = HuggingFaceEmbeddings(
-    model_name=model_name,
-    model_kwargs=model_kwargs,
-    encode_kwargs=encode_kwargs
-)
+import requests
 
 
 # Load environment variables
-load_dotenv()
+# See what dotenv actually loaded
+config = dotenv_values(".env")
+print("All env variables from .env:")
+for key, value in config.items():
+    print(f"  {key}: {value[:10] if value else 'None'}...")
 
-# Initialize embedding model
-# embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-# embedding_model = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+# Check if the key exists
+api_key = getenv("OPENROUTER_API_KEY")
+print(f"\ngetenv result: {repr(api_key)}")
 
 SUPABASE_URL = getenv("SUPABASE_URL")
 SUPABASE_KEY = getenv("SUPABASE_API_KEY") #SUPABASE_KEY
-# SUPABASE = createClient(supabaseUrl, supabaseKey)
 SUPABASE: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-# Initialize vectordatabase
-CHECKINS_DB = Chroma(
-    collection_name="user_checkins_db",
-    embedding_function=SBERT_EMBEDDING,
-    persist_directory="./user_db",
+
+api_key=getenv("OPENROUTER_API_KEY")
+base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK")
+
+if not api_key:
+    raise ValueError("OPENROUTER_API_KEY environment variable not set")
+
+
+print(f"API Key exists: {bool(api_key)}")
+print(f"API Key preview: {api_key[:10] if api_key else 'NONE'}...")  # Don't log full keys
+print(f"Base URL: {base_url}")
+print(f"Loaded key: {repr(api_key)}")
+
+# Raw API test
+response = requests.post(
+    "https://openrouter.ai/api/v1/chat/completions",
+    headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:3000",
+        "X-Title": "TestApp"
+    },
+    json={
+        "model": "qwen/qwen3-30b-a3b:free",  # Use a known working model
+        "messages": [{"role": "user", "content": "hi"}]
+    }
 )
 
-INSIGHTS_DB = Chroma(
-    collection_name="user_insights_db",
-    embedding_function=SBERT_EMBEDDING,
-    persist_directory="./user_db",
-)
+print(f"\nStatus Code: {response.status_code}")
+print(f"Response: {response.json()}")
+
 
 SUMMARIZATION_LLM = ChatOpenAI(
-    api_key=getenv("OPENROUTER_API_KEY"),
+    api_key=api_key,
     base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
     # model="deepseek/deepseek-chat-v3.1:free",
     # model="qwen/qwen3-235b-a22b:free"
@@ -54,23 +68,38 @@ SUMMARIZATION_LLM = ChatOpenAI(
 
 # Initialize Primary LLM
 PRIMARY_LLM  = ChatOpenAI(
-    api_key=getenv("OPENROUTER_API_KEY"),
+    api_key=api_key,
     base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
-    # model="deepseek/deepseek-chat-v3.1:free",
     model = "qwen/qwen3-30b-a3b:free"
-    # model="qwen/qwen3-235b-a22b:free"
-    # model = "arliai/qwq-32b-arliai-rpr-v1:free"
-    # model = "z-ai/glm-4.5-air:free"
-    # model="google/gemma-3n-e2b-it:free",
-    # model="openai/gpt-oss-120b:free"
 )
 
 # Initialize Fallback LLM
-FALLBACK_LLM= ChatOpenAI(
-  api_key=getenv("OPENROUTER_API_KEY"),
+FALLBACK_LLM_1= ChatOpenAI(
+  api_key=api_key,
   base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
-  model="deepseek/deepseek-chat-v3.1:free",
+  model="z-ai/glm-4.5-air:free",
 )
+
+FALLBACK_LLM_2= ChatOpenAI(
+  api_key=api_key,
+  base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
+  model="minimax/minimax-m2:free",
+)
+
+
+FALLBACK_LLM_3= ChatOpenAI(
+  api_key=api_key,
+  base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
+  model="tngtech/deepseek-r1t2-chimera:free",
+)
+
+
+FALLBACK_LLM_4= ChatOpenAI(
+  api_key=api_key,
+  base_url=getenv("OPENROUTER_BASE_URL_DEEPSEEK"),
+  model="deepseek/deepseek-r1-0528-qwen3-8b:free",
+)
+
 
 # Obtain CTRL API key from .env
 CTRL_API_KEY = getenv("CTRL_API_KEY")

@@ -46,7 +46,7 @@ async def summarize_previous_day_checkins(user_id: str, user_timezone: str):
     print(checkins)
     if not checkins:
         print(f"No check-ins found for {previous_day}")
-        return
+        return "No check-ins found for previous day"
     # Extract energy values
     energy_values = [
         item.get("energy_value")
