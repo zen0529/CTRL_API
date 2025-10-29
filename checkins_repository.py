@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 # from llm_service import summarize_insight
+from models import GenerateInsightsRequest
 from obtain_timezone import getTimeZone
 from setup import SUPABASE
 import calendar
@@ -21,14 +22,36 @@ def to_manila_datetime(created_at_str: str) -> datetime:
     created_at_utc = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
     return created_at_utc.astimezone("Asia/Manila")
  
-def check_which_user(user_id: str) -> str:
+def check_which_user(user_id: str, user_timezone: str, request: GenerateInsightsRequest) -> str:
     """Check if the user is new, new with check-in, or existing."""
     response = SUPABASE.table("mood_checkIns").select("*").eq("user_id", user_id).order("created_at", desc=False).limit(10).execute()
     
     if (len(response.data) == 0):
-        return "new_user"
-    # elif (len(response.data) == 1):
-    #     return "existing_user_with_missed_checkins"
+         new_user_data = {
+            "feelings": request.feelings,
+            "avoided_emotion": request.emotionalIntelligenceQuestion,
+            "mirror_question": request.mirrorQuestion,
+            "energy_value": request.energy_value
+            }
+         try:
+             SUPABASE.table("mood_checkIns").insert(new_user_data).execute()
+             print("new user data inserted successfully.")
+         except Exception as e:
+             print(f"Failed to insert new user data: {e}")
+             return "Failed to insert new user data: {e}"
+         
+         user_data = {
+            "user_id": user_id,
+            "user_timezone": user_timezone,
+            }
+         try:
+             SUPABASE.table("users").insert(user_data).execute()
+             print("data inserted successfully to user db.")
+         except Exception as e:
+             print(f"Failed to insert new user data: {e}")
+             return "Failed to insert data to user db: {e}"
+          
+         return "new_user"
     else:
         return "existing_user"
 
