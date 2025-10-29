@@ -28,6 +28,7 @@ def check_which_user(user_id: str, user_timezone: str, request: GenerateInsights
     
     if (len(response.data) == 0):
          new_user_data = {
+            "user_id": user_id,
             "feelings": request.feelings,
             "avoided_emotion": request.emotionalIntelligenceQuestion,
             "mirror_question": request.mirrorQuestion,
@@ -42,7 +43,7 @@ def check_which_user(user_id: str, user_timezone: str, request: GenerateInsights
          
          user_data = {
             "user_id": user_id,
-            "user_timezone": user_timezone,
+            "timezone_user": user_timezone,
             }
          try:
              SUPABASE.table("users").insert(user_data).execute()
