@@ -36,23 +36,6 @@ async def generate_insights(request: GenerateInsightsRequest, user_timezone: str
     Daily_Action = await LLM_Query(request, user_id ,user_timezone)
     return Daily_Action
 
-    # with open("mockdata.json", "r") as f:
-    #     mock_data = json.load(f)
-        
-    # for row in mock_data:
-    #     response = SUPABASE.table("mood_checkIns").insert(row).execute()
-    #     print(response)
-    # lol = summarize_monthly_checkins(user_id)
-
-    # lol1 = await summarize_previous_day_checkins(user_id, user_timezone)
-    
-    # lol1 = await summarize_monthly_checkins(user_id, user_timezone)
-    # lol1 = get_monthly_summaries(user_id, user_timezone)
-    # lol1 = obtain_previous_checkins_of_the_current_week(user_id, user_timezone)
-    
-    # lol1 = await summarize_previous_day_checkins(user_id, user_timezone)
-    # return lol1
-
 
 @app.post("/summarize_daily")
 async def summarize_daily( user_timezone: str, user_id:str):
@@ -74,14 +57,23 @@ async def summarize_monthly(user_timezone: str, user_id:str):
         return result
 
 
-def update_last_summary_date(user_id, summary_type, summary_date):
-    """Update last_daily_summary or last_monthly_summary in Supabase."""
+@app.get("/get_users")
+async def get_users():
+    """Return all users with their timezones."""
+    response = SUPABASE.table("users").select("user_id, timezone_user, last_daily_summary, last_monthly_summary").execute()
+    return {"users": response.data or []}
+
+
+@app.post("/update_last_summary")
+async def update_last_summary(user_id: str, summary_type: str, summary_date: str):
+    """Update last_daily_summary or last_monthly_summary."""
     column = f"last_{summary_type}_summary"
     try:
-        SUPABASE.table("users").update({column: str(summary_date)}).eq("user_id", user_id).execute()
-        print(f"✅ Updated {column} for user {user_id} to {summary_date}")
+        SUPABASE.table("users").update({column: summary_date}).eq("user_id", user_id).execute()
+        return {"status": "ok"}
     except Exception as e:
-        print(f"❌ Failed to update {column} for user {user_id}: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 if __name__ == "__main__":
     import uvicorn
