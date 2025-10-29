@@ -46,7 +46,7 @@ async def LLM_Query(request: GenerateInsightsRequest, user_id: str, user_timezon
     
     # Setup
     timezone = getTimeZone(user_timezone)
-    user_type = check_which_user(user_id)
+    user_type = check_which_user(user_id, user_timezone, request)
     print(f"user type: {user_type}")
     
     # Build prompt
